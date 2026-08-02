@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowDownRight,
   ArrowUpRight,
   Bell,
   Boxes,
@@ -11,7 +10,6 @@ import {
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
-  ClipboardList,
   CloudOff,
   Download,
   FileText,
@@ -20,10 +18,8 @@ import {
   LoaderCircle,
   LogOut,
   Menu,
-  Minus,
   MoreHorizontal,
   Package,
-  PackageCheck,
   Plus,
   Search,
   Settings,
@@ -37,6 +33,17 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
+import { Dialog } from "@base-ui/react/dialog";
+import { Menu as BaseMenu } from "@base-ui/react/menu";
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type RowSelectionState,
+  type SortingState,
+} from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
@@ -63,6 +70,20 @@ type AppProfile = {
   organization_id: string | null;
 };
 
+type ProductRow = {
+  id: string;
+  name: string;
+  code: string;
+  category: string;
+  stock: string;
+  stockValue: number;
+  base: string;
+  price: string;
+  priceValue: number;
+  status: string;
+  active: boolean;
+};
+
 const primaryNavigation: { id: ViewId; label: string; icon: IconType; badge?: string }[] = [
   { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
   { id: "products", label: "Produk", icon: Package },
@@ -77,15 +98,6 @@ const managementNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "team", label: "Pegawai", icon: Users },
   { id: "reports", label: "Laporan", icon: FileText },
   { id: "settings", label: "Pengaturan", icon: Settings },
-];
-
-const products = [
-  { name: "Rokok Surya 12", code: "PRD-00018", category: "Rokok", stock: "8 pak · 16 bungkus", base: "Bungkus", price: "Rp36.000", status: "Menipis" },
-  { name: "Minyakita 1 Liter", code: "PRD-00031", category: "Sembako", stock: "12 dus · 8 botol", base: "Botol", price: "Rp17.500", status: "Tersedia" },
-  { name: "Indomie Goreng", code: "PRD-00007", category: "Makanan", stock: "4 dus · 22 bungkus", base: "Bungkus", price: "Rp3.500", status: "Tersedia" },
-  { name: "Gula Rose Brand", code: "PRD-00024", category: "Sembako", stock: "18 kg", base: "Gram", price: "Rp18.000", status: "Tersedia" },
-  { name: "Kopi Kapal Api 65g", code: "PRD-00042", category: "Minuman", stock: "2 dus · 3 renteng", base: "Sachet", price: "Rp1.500", status: "Menipis" },
-  { name: "Telur Ayam Negeri", code: "PRD-00012", category: "Segar", stock: "0 peti · 7 kg", base: "Gram", price: "Rp30.000", status: "Kritis" },
 ];
 
 const transactions = [
@@ -125,6 +137,34 @@ function BrandMark() {
 
 function StatusPill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "good" | "warn" | "danger" | "info" | "neutral" }) {
   return <span className={`status-pill ${tone}`}>{children}</span>;
+}
+
+function SortableHeader({ label, column }: { label: string; column: { getCanSort: () => boolean; getIsSorted: () => false | "asc" | "desc"; getToggleSortingHandler: () => ((event: unknown) => void) | undefined } }) {
+  if (!column.getCanSort()) return <span>{label}</span>;
+  const direction = column.getIsSorted();
+  return (
+    <button className={`table-sort ${direction ? "sorted" : ""}`} onClick={column.getToggleSortingHandler()}>
+      {label}
+      <span aria-hidden="true">{direction === "asc" ? "↑" : direction === "desc" ? "↓" : "↕"}</span>
+    </button>
+  );
+}
+
+function ProductActions({ product }: { product: ProductRow }) {
+  const copy = (value: string) => void navigator.clipboard?.writeText(value);
+  return (
+    <BaseMenu.Root>
+      <BaseMenu.Trigger className="icon-button" aria-label={`Aksi untuk ${product.name}`}><MoreHorizontal size={18} /></BaseMenu.Trigger>
+      <BaseMenu.Portal>
+        <BaseMenu.Positioner sideOffset={6} align="end" className="menu-positioner">
+          <BaseMenu.Popup className="action-menu">
+            <BaseMenu.Item className="action-menu-item" onClick={() => copy(product.code)}>Salin kode produk</BaseMenu.Item>
+            <BaseMenu.Item className="action-menu-item" onClick={() => copy(product.name)}>Salin nama produk</BaseMenu.Item>
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </BaseMenu.Portal>
+    </BaseMenu.Root>
+  );
 }
 
 function LoginScreen() {
@@ -437,8 +477,9 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
 function ProductsView() {
   const [query, setQuery] = useState("");
   const [activeView, setActiveView] = useState("Semua");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [liveProducts, setLiveProducts] = useState<Array<{ id: string; name: string; code: string; category: string; stock: string; base: string; price: string; status: string }>>([]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [liveProducts, setLiveProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -472,9 +513,12 @@ function ProductsView() {
           code: String(row.code),
           category: category?.name ?? "Tanpa kategori",
           stock: `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 3 }).format(stock)} ${unit?.name ?? "unit"}`,
+          stockValue: stock,
           base: unit?.name ?? "—",
           price: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price),
+          priceValue: price,
           status: stock <= 0 ? "Kritis" : stock <= minimum ? "Menipis" : "Tersedia",
+          active: Boolean(row.is_active),
         };
       });
       setLiveProducts(mapped);
@@ -530,25 +574,76 @@ function ProductsView() {
     setSaving(false);
   };
 
-  const filtered = useMemo(() => liveProducts.filter((product) => `${product.name} ${product.code} ${product.category}`.toLowerCase().includes(query.toLowerCase())), [liveProducts, query]);
-  const allSelected = filtered.length > 0 && selected.length === filtered.length;
+  const filtered = useMemo(() => liveProducts.filter((product) => {
+    const matchesQuery = `${product.name} ${product.code} ${product.category}`.toLowerCase().includes(query.toLowerCase());
+    const matchesView = activeView === "Semua"
+      || (activeView === "Aktif" && product.active)
+      || (activeView === "Stok menipis" && product.status === "Menipis")
+      || (activeView === "Habis" && product.stockValue <= 0)
+      || (activeView === "Draf" && !product.active);
+    return matchesQuery && matchesView;
+  }), [activeView, liveProducts, query]);
+
+  const columns = useMemo<ColumnDef<ProductRow>[]>(() => [
+    {
+      id: "select",
+      enableSorting: false,
+      header: ({ table }) => <input type="checkbox" aria-label="Pilih semua produk" checked={table.getIsAllRowsSelected()} ref={(node) => { if (node) node.indeterminate = table.getIsSomeRowsSelected(); }} onChange={table.getToggleAllRowsSelectedHandler()} />,
+      cell: ({ row }) => <input type="checkbox" aria-label={`Pilih ${row.original.name}`} checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()} />,
+    },
+    { accessorKey: "name", header: "Produk", cell: ({ row }) => <span className="product-cell"><span><strong>{row.original.name}</strong><small>{row.original.code}</small></span></span> },
+    { accessorKey: "category", header: "Kategori" },
+    { accessorKey: "stockValue", id: "stock", header: "Stok Antapani", cell: ({ row }) => <strong>{row.original.stock}</strong> },
+    { accessorKey: "base", header: "Satuan dasar" },
+    { accessorKey: "priceValue", id: "price", header: "Harga jual", cell: ({ row }) => <strong>{row.original.price}</strong> },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusPill tone={row.original.status === "Tersedia" ? "good" : row.original.status === "Kritis" ? "danger" : "warn"}>{row.original.status}</StatusPill> },
+    { id: "actions", enableSorting: false, cell: ({ row }) => <ProductActions product={row.original} /> },
+  ], []);
+
+  // TanStack Table intentionally exposes stateful functions that React Compiler does not memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: filtered,
+    columns,
+    state: { rowSelection, sorting },
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    getRowId: (row) => row.id,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+  const selectedCount = Object.keys(rowSelection).length;
   return (
     <div className="view-stack">
       <div className="action-strip product-actions"><div><p className="helper-copy">{liveProducts.length} produk tersimpan di Supabase</p></div><button className="button secondary"><Download size={17} /> Impor / ekspor</button><button className="button primary" onClick={openCreate}><Plus size={18} /> Tambah produk</button></div>
       <section className="surface data-surface">
-        <div className="saved-views">{["Semua", "Aktif", "Stok menipis", "Habis", "Draf"].map((view) => <button key={view} className={activeView === view ? "active" : ""} onClick={() => setActiveView(view)}>{view}{view === "Stok menipis" && <b>6</b>}</button>)}</div>
-        <div className="table-toolbar"><div className="search-field"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk" /></div><div className="toolbar-buttons"><button className="button compact secondary"><SlidersHorizontal size={16} /> Filter</button><button className="button compact secondary">Urutkan <ChevronDown size={15} /></button></div></div>
-        {selected.length > 0 && <div className="bulk-bar"><strong>{selected.length} produk dipilih</strong><button>Ubah status</button><button>Atur kategori</button><button>Ekspor</button><button className="danger-action">Arsipkan</button></div>}
+        <div className="saved-views">{["Semua", "Aktif", "Stok menipis", "Habis", "Draf"].map((view) => <button key={view} className={activeView === view ? "active" : ""} onClick={() => { setActiveView(view); setRowSelection({}); }}>{view}{view === "Stok menipis" && <b>{liveProducts.filter((product) => product.status === "Menipis").length}</b>}</button>)}</div>
+        <div className="table-toolbar"><div className="search-field"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk" /></div><div className="toolbar-hint">Klik judul kolom untuk mengurutkan</div></div>
+        {selectedCount > 0 && <div className="bulk-bar"><strong>{selectedCount} produk dipilih</strong><button>Ubah status</button><button>Atur kategori</button><button>Ekspor</button><button className="danger-action">Arsipkan</button></div>}
         <div className="data-table product-table">
-          <div className="table-head"><span><input type="checkbox" aria-label="Pilih semua produk" checked={allSelected} onChange={() => setSelected(allSelected ? [] : filtered.map((product) => product.id))} /></span><span>Produk</span><span>Kategori</span><span>Stok Antapani</span><span>Satuan dasar</span><span>Harga jual</span><span>Status</span><span /></div>
-          {filtered.map((product) => <div className="table-row" key={product.id}><span><input type="checkbox" aria-label={`Pilih ${product.name}`} checked={selected.includes(product.id)} onChange={() => setSelected((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id])} /></span><span className="product-cell"><span><strong>{product.name}</strong><small>{product.code}</small></span></span><span>{product.category}</span><span><strong>{product.stock}</strong></span><span>{product.base}</span><span><strong>{product.price}</strong></span><span><StatusPill tone={product.status === "Tersedia" ? "good" : product.status === "Kritis" ? "danger" : "warn"}>{product.status}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}
+          {table.getHeaderGroups().map((headerGroup) => <div className="table-head" key={headerGroup.id}>{headerGroup.headers.map((header) => <span key={header.id}>{header.isPlaceholder ? null : typeof header.column.columnDef.header === "string" ? <SortableHeader label={header.column.columnDef.header} column={header.column} /> : flexRender(header.column.columnDef.header, header.getContext())}</span>)}</div>)}
+          {table.getRowModel().rows.map((row) => <div className={`table-row ${row.getIsSelected() ? "selected" : ""}`} key={row.id}>{row.getVisibleCells().map((cell) => <span key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>)}</div>)}
           {loading && <div className="empty-state"><LoaderCircle className="spin" size={27} /><strong>Memuat produk...</strong></div>}
           {!loading && loadError && <div className="empty-state"><CloudOff size={27} /><strong>{loadError}</strong><button className="button secondary compact" onClick={loadProducts}>Coba lagi</button></div>}
           {!loading && !loadError && filtered.length === 0 && <div className="empty-state"><Package size={30} /><strong>{query ? "Produk tidak ditemukan" : "Belum ada produk"}</strong><span>{query ? "Coba gunakan nama atau kode yang berbeda." : "Tambahkan produk pertama untuk mulai mengelola stok."}</span>{!query && <button className="button primary compact" onClick={openCreate}><Plus size={16}/> Tambah produk</button>}</div>}
         </div>
         <div className="table-footer"><span>Menampilkan {filtered.length} dari {liveProducts.length} produk</span><div><button disabled><ChevronDown size={16} /></button><b>1</b><button disabled><ChevronRight size={16} /></button></div></div>
       </section>
-      {createOpen && <div className="modal-scrim" role="presentation" onMouseDown={() => !saving && setCreateOpen(false)}><form className="product-modal" onSubmit={createProduct} onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3>Tambah produk</h3><p>Produk akan langsung tersimpan di Supabase.</p></div><button type="button" className="icon-button" onClick={() => setCreateOpen(false)}><X size={18}/></button></div><div className="product-form-grid"><label className="span-two">Nama produk<input value={form.name} onChange={(event) => setForm({...form, name: event.target.value})} placeholder="Contoh: Minyakita 1 Liter" required /></label><label>Kode produk<input value={form.code} onChange={(event) => setForm({...form, code: event.target.value})} placeholder="PRD-0001" required /></label><label>Cabang awal<select value={form.branchId} onChange={(event) => setForm({...form, branchId: event.target.value})} required>{lookups.branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><label>Kategori<select value={form.categoryId} onChange={(event) => setForm({...form, categoryId: event.target.value})}>{lookups.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Satuan dasar<select value={form.unitId} onChange={(event) => setForm({...form, unitId: event.target.value})} required>{lookups.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label><label>Harga jual<input type="number" min="0" value={form.sellingPrice} onChange={(event) => setForm({...form, sellingPrice: event.target.value})} placeholder="0" required /></label><label>Stok awal<input type="number" step="0.001" value={form.initialStock} onChange={(event) => setForm({...form, initialStock: event.target.value})} /></label><label>Stok minimum<input type="number" min="0" step="0.001" value={form.minimumStock} onChange={(event) => setForm({...form, minimumStock: event.target.value})} /></label></div>{formError && <div className="login-message error">{formError}</div>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setCreateOpen(false)}>Batal</button><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan produk"}</button></div></form></div>}
+      <Dialog.Root open={createOpen} onOpenChange={(open) => { if (!saving) setCreateOpen(open); }} disablePointerDismissal={saving}>
+        <Dialog.Portal>
+          <Dialog.Backdrop className="modal-scrim" />
+          <Dialog.Viewport className="dialog-viewport">
+            <Dialog.Popup className="product-modal">
+              <form onSubmit={createProduct}>
+                <div className="modal-head"><div><Dialog.Title>Tambah produk</Dialog.Title><Dialog.Description>Produk akan langsung tersimpan di Supabase.</Dialog.Description></div><Dialog.Close className="icon-button" disabled={saving} aria-label="Tutup"><X size={18}/></Dialog.Close></div>
+                <div className="product-form-grid"><label className="span-two">Nama produk<input value={form.name} onChange={(event) => setForm({...form, name: event.target.value})} placeholder="Contoh: Minyakita 1 Liter" required /></label><label>Kode produk<input value={form.code} onChange={(event) => setForm({...form, code: event.target.value})} placeholder="PRD-0001" required /></label><label>Cabang awal<select value={form.branchId} onChange={(event) => setForm({...form, branchId: event.target.value})} required>{lookups.branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><label>Kategori<select value={form.categoryId} onChange={(event) => setForm({...form, categoryId: event.target.value})}>{lookups.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Satuan dasar<select value={form.unitId} onChange={(event) => setForm({...form, unitId: event.target.value})} required>{lookups.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label><label>Harga jual<input type="number" min="0" value={form.sellingPrice} onChange={(event) => setForm({...form, sellingPrice: event.target.value})} placeholder="0" required /></label><label>Stok awal<input type="number" step="0.001" value={form.initialStock} onChange={(event) => setForm({...form, initialStock: event.target.value})} /></label><label>Stok minimum<input type="number" min="0" step="0.001" value={form.minimumStock} onChange={(event) => setForm({...form, minimumStock: event.target.value})} /></label></div>
+                {formError && <div className="login-message error">{formError}</div>}
+                <div className="modal-actions"><Dialog.Close className="button secondary" disabled={saving}>Batal</Dialog.Close><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan produk"}</button></div>
+              </form>
+            </Dialog.Popup>
+          </Dialog.Viewport>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
@@ -587,7 +682,10 @@ function InventoryView() {
     setLoading(false);
   };
 
-  useEffect(() => { void loadInventory(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadInventory(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const saveAdjustment = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -625,7 +723,23 @@ function InventoryView() {
           {!loading && rows.length === 0 && <div className="empty-state"><Boxes size={28}/><strong>Belum ada persediaan</strong><span>Tambahkan produk terlebih dahulu dari menu Produk.</span></div>}
         </div>
       </section>
-      {adjusting && <div className="modal-scrim" role="presentation" onMouseDown={() => !saving && setAdjusting(null)}><form className="stock-modal" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title" onSubmit={saveAdjustment} onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3 id="stock-modal-title">Sesuaikan stok</h3><p>{adjusting.name} · Cabang {branchName}</p></div><button type="button" className="icon-button" onClick={() => setAdjusting(null)}><X size={18}/></button></div><label>Alasan penyesuaian<select value={adjustForm.movementType} onChange={(event) => setAdjustForm({...adjustForm, movementType: event.target.value})}><option value="purchase">Stok diterima / pembelian</option><option value="adjustment">Hasil hitung ulang</option><option value="damaged">Barang rusak / hilang</option><option value="sale_return">Retur pelanggan</option><option value="purchase_return">Retur ke supplier</option></select></label><label>Perubahan jumlah<input type="number" step="0.001" value={adjustForm.delta} onChange={(event) => setAdjustForm({...adjustForm, delta: event.target.value})} required /><small>Gunakan angka negatif untuk mengurangi stok, misalnya −2.</small></label><label>Catatan<textarea value={adjustForm.notes} onChange={(event) => setAdjustForm({...adjustForm, notes: event.target.value})} placeholder="Tambahkan catatan untuk riwayat stok" /></label>{adjustError && <div className="login-message error">{adjustError}</div>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setAdjusting(null)}>Batal</button><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan penyesuaian"}</button></div></form></div>}
+      <Dialog.Root open={Boolean(adjusting)} onOpenChange={(open) => { if (!open && !saving) setAdjusting(null); }} disablePointerDismissal={saving}>
+        <Dialog.Portal>
+          <Dialog.Backdrop className="modal-scrim" />
+          <Dialog.Viewport className="dialog-viewport">
+            <Dialog.Popup className="stock-modal">
+              {adjusting && <form onSubmit={saveAdjustment}>
+                <div className="modal-head"><div><Dialog.Title className="dialog-title">Sesuaikan stok</Dialog.Title><Dialog.Description className="dialog-description">{adjusting.name} · Cabang {branchName}</Dialog.Description></div><Dialog.Close className="icon-button" disabled={saving} aria-label="Tutup"><X size={18}/></Dialog.Close></div>
+                <label>Alasan penyesuaian<select value={adjustForm.movementType} onChange={(event) => setAdjustForm({...adjustForm, movementType: event.target.value})}><option value="purchase">Stok diterima / pembelian</option><option value="adjustment">Hasil hitung ulang</option><option value="damaged">Barang rusak / hilang</option><option value="sale_return">Retur pelanggan</option><option value="purchase_return">Retur ke supplier</option></select></label>
+                <label>Perubahan jumlah<input type="number" step="0.001" value={adjustForm.delta} onChange={(event) => setAdjustForm({...adjustForm, delta: event.target.value})} required /><small>Gunakan angka negatif untuk mengurangi stok, misalnya −2.</small></label>
+                <label>Catatan<textarea value={adjustForm.notes} onChange={(event) => setAdjustForm({...adjustForm, notes: event.target.value})} placeholder="Tambahkan catatan untuk riwayat stok" /></label>
+                {adjustError && <div className="login-message error">{adjustError}</div>}
+                <div className="modal-actions"><Dialog.Close className="button secondary" disabled={saving}>Batal</Dialog.Close><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan penyesuaian"}</button></div>
+              </form>}
+            </Dialog.Popup>
+          </Dialog.Viewport>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
@@ -677,7 +791,10 @@ function TeamView() {
     setProfiles((data ?? []) as Array<{ id: string; full_name: string; phone: string | null; role: string; status: string; created_at: string }>);
     setLoading(false);
   };
-  useEffect(() => { void loadProfiles(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadProfiles(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   const approve = async (userId: string) => {
     setActionError("");
     const [{ data: authData }, { data: branches }] = await Promise.all([supabase.auth.getUser(), supabase.from("branches").select("id").eq("is_active", true).order("created_at").limit(1)]);
@@ -735,6 +852,7 @@ export default function Home() {
       }
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (nextSession) setAuthLoading(true);
       setSession(nextSession);
       if (!nextSession) {
         setProfile(null);
@@ -749,7 +867,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!session?.user.id) return;
-    setAuthLoading(true);
     supabase.from("profiles").select("id, full_name, role, status, organization_id").eq("id", session.user.id).single()
       .then(({ data, error }) => {
         if (!error && data) setProfile(data as AppProfile);
