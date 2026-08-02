@@ -879,3 +879,270 @@ body { background: var(--canvas); color: var(--ink); font-size: 13px; }
   .branch-card-actions { grid-template-columns: 1fr; }
   .inline-create-form, .inline-create-form.category-form { grid-template-columns: 1fr; }
 }
+
+/* Readable responsive scale
+   Keep the dense back-office character without sacrificing legibility. */
+html { min-width: 320px; }
+body { font-size: 15px; line-height: 1.45; }
+button, input, select, textarea { font: inherit; }
+
+.sidebar { width: 248px; }
+.admin-shell { grid-template-columns: 248px minmax(0, 1fr); }
+.brand-lockup strong { font-size: 16px; }
+.brand-lockup span { font-size: 12px; }
+.nav-caption { font-size: 11px; }
+.nav-item { min-height: 46px; height: 46px; }
+.nav-item span { font-size: 14px; }
+.nav-item b { font-size: 11px; }
+.sync-card strong, .user-card strong { font-size: 13px; }
+.sync-card span, .user-card span { font-size: 11px; }
+
+.topbar { min-height: 76px; }
+.page-heading p { font-size: 11px; }
+.page-heading h1 { font-size: 24px; }
+.branch-picker { min-width: 190px; }
+.branch-picker small { font-size: 10px; }
+.branch-picker strong { font-size: 13px; }
+.panel-heading p { font-size: 11px; }
+.panel-heading h3 { font-size: 19px; }
+.notification-row strong, .attention-row strong { font-size: 14px; }
+.notification-row small, .attention-row small { font-size: 12px; }
+
+.section-kicker { font-size: 11px; }
+.heading-note { font-size: 13px; }
+.control-field > span { font-size: 12px; }
+.control-field > button, .control-value { min-height: 42px; font-size: 13px; }
+.welcome-band span { font-size: 14px; }
+.button { min-height: 42px; padding-inline: 16px; font-size: 13px; }
+.button.compact { min-height: 38px; }
+.surface-heading h3 { font-size: 17px; }
+.text-action, .text-button { min-height: 32px; font-size: 12px; }
+.status-pill { min-height: 26px; padding-inline: 9px; font-size: 11px; }
+
+.metric-card { min-height: 160px; }
+.metric-card p { font-size: 13px; }
+.metric-card h3 { font-size: 25px; }
+.metric-card > span { font-size: 12px; }
+.period-tabs button, .segmented button, .filter-chips button { font-size: 12px; }
+.period-tabs button { min-height: 32px; }
+.chart-summary strong { font-size: 21px; }
+.chart-summary span { font-size: 12px; }
+.bar-column span, .average-line span, .report-bars > div > span { font-size: 10px; }
+.branch-row strong, .transaction-row strong { font-size: 13px; }
+.branch-row small, .transaction-row small { font-size: 11px; }
+.compact-empty { font-size: 13px; }
+
+.search-field { min-height: 44px; }
+.search-field input { font-size: 15px; }
+.search-field.small { min-height: 40px; }
+.mini-metrics > div { min-height: 98px; }
+.mini-metrics span, .mini-metrics small { font-size: 12px; }
+.mini-metrics strong { font-size: 22px; }
+
+.data-surface {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+.data-table { width: 100%; min-width: 900px; }
+.data-table .table-head { min-height: 46px; font-size: 11px; }
+.data-table .table-row { min-height: 68px; font-size: 13px; }
+.data-table .table-row span > small,
+.data-table .table-row > span > small { font-size: 11px; line-height: 1.35; }
+.table-footer { min-height: 60px; font-size: 12px; }
+.table-footer button, .table-footer b { width: 34px; height: 34px; font-size: 12px; }
+.saved-views, .module-tabs { min-height: 50px; }
+.saved-views button, .module-tabs button { font-size: 13px; }
+.saved-views button b, .table-sort > span { font-size: 11px; }
+.bulk-bar, .bulk-bar button, .toolbar-hint { font-size: 12px; }
+.workflow-strip .step { width: 30px; height: 30px; font-size: 11px; }
+.workflow-strip strong { font-size: 13px; }
+.workflow-strip small { font-size: 11px; }
+
+.inventory-alert strong, .approval-banner strong { font-size: 14px; }
+.inventory-alert p, .approval-banner p { font-size: 12px; }
+.order-summary strong { font-size: 13px; }
+.order-summary small { font-size: 11px; }
+.order-card strong { font-size: 14px; }
+.order-card small, .order-card p { font-size: 12px; }
+.detail-head h3 { font-size: 21px; }
+.detail-head > span { font-size: 12px; }
+.customer-line strong { font-size: 13px; }
+.customer-line span { font-size: 12px; }
+.order-items strong, .stock-check strong { font-size: 13px; }
+.order-items small, .stock-check small { font-size: 11px; }
+.sync-note, .helper-copy { font-size: 12px; }
+.shift-head strong { font-size: 14px; }
+.shift-head small, .shift-numbers small, .shift-foot > span { font-size: 11px; }
+.shift-numbers strong { font-size: 16px; }
+.branch-card > p { font-size: 12px; }
+.branch-kpi small, .branch-stats small { font-size: 11px; }
+.branch-kpi strong { font-size: 20px; }
+.branch-stats strong { font-size: 15px; }
+.weekly-bars span, .weekly-bars small, .report-breakdown small { font-size: 11px; }
+.report-hero > div:first-child > span { font-size: 13px; }
+.top-products strong { font-size: 13px; }
+
+.settings-nav button { min-height: 44px; font-size: 13px; }
+.settings-title h3 { font-size: 21px; }
+.settings-title span { font-size: 12px; }
+.setting-group h4 { font-size: 14px; }
+.setting-group p { font-size: 12px; }
+.setting-row { min-height: 70px; }
+.setting-row strong { font-size: 13px; }
+.setting-row small { font-size: 11px; }
+
+.modal-head h3, .modal-head h2, .dialog-title { font-size: 20px; }
+.modal-head p, .dialog-description { font-size: 12px; }
+.stock-modal label,
+.login-form label,
+.product-modal label,
+.feature-form label,
+.feature-form-grid label,
+.settings-form-grid label,
+.settings-inline-field label { font-size: 13px; }
+.stock-modal input,
+.stock-modal select,
+.stock-modal textarea,
+.login-form input,
+.product-modal input,
+.product-modal select,
+.feature-form input,
+.feature-form select,
+.feature-form textarea,
+.feature-form-grid input,
+.feature-form-grid select,
+.feature-form-grid textarea,
+.settings-form-grid input,
+.settings-form-grid select,
+.settings-form-grid textarea,
+.settings-inline-field input { min-height: 46px; font-size: 15px; }
+.feature-form small, .subform-head small { font-size: 11px; }
+.subform-head strong { font-size: 14px; }
+.unit-editor select, .unit-editor input, .inline-create-form > input { min-height: 42px; font-size: 13px; }
+.date-input { min-height: 42px; }
+.date-input input { font-size: 13px; }
+.action-menu-item { min-height: 40px; font-size: 13px; }
+.receipt-detail strong, .simple-list strong { font-size: 13px; }
+.receipt-detail small, .simple-list small { font-size: 11px; }
+.simple-list > div { min-height: 58px; }
+.app-toast { font-size: 13px; }
+
+.login-brand strong { font-size: 16px; }
+.login-brand small { font-size: 12px; }
+.login-copy p, .login-form > div:first-child p { font-size: 11px; }
+.login-copy > span { font-size: 14px; }
+.login-form h2 { font-size: 28px; }
+.login-form > div:first-child > span { font-size: 13px; line-height: 1.5; }
+.forgot-button, .auth-switch, .login-message { font-size: 13px; }
+.app-loading > span { font-size: 13px; }
+.account-state h1 { font-size: 24px; }
+.account-state > span { font-size: 12px; }
+
+@media (max-width: 1180px) {
+  .dashboard-grid, .dashboard-grid.lower { grid-template-columns: 1fr; }
+  .branch-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .orders-layout { grid-template-columns: minmax(280px, .8fr) minmax(390px, 1.2fr); }
+}
+
+@media (max-width: 960px) {
+  .admin-shell { display: block; }
+  .sidebar {
+    width: min(84vw, 310px);
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    box-shadow: 15px 0 50px rgba(0,0,0,.2);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-scrim { position: fixed; inset: 0; z-index: 35; border: 0; background: rgba(13,31,21,.46); }
+  .workspace { width: 100%; }
+  .menu-trigger, .mobile-only { display: inline-grid; }
+  .orders-layout { grid-template-columns: 1fr; }
+  .order-detail { order: -1; }
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { display: flex; overflow-x: auto; overscroll-behavior-inline: contain; }
+  .settings-nav button { width: auto; min-width: max-content; }
+}
+
+@media (max-width: 760px) {
+  body { font-size: 15px; }
+  .topbar { height: 70px; min-height: 70px; padding: 0 14px; }
+  .page-content { padding: 18px 14px 40px; }
+  .page-heading { gap: 8px; }
+  .page-heading h1 { font-size: 21px; }
+  .page-heading p { font-size: 10px; }
+  .branch-picker { min-width: 160px; }
+  .topbar-actions { gap: 6px; }
+  .notification-panel { top: 62px; right: 12px; width: min(370px, calc(100vw - 24px)); }
+  .metric-grid, .report-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric-card:nth-child(n) { border-left: 0; border-top: 1px solid var(--line); }
+  .metric-card:first-child { border-top: 0; }
+  .mini-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-metrics > div:nth-child(odd) { border-left: 0; }
+  .mini-metrics > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .branch-cards, .shift-grid { grid-template-columns: 1fr; }
+  .action-strip { flex-wrap: wrap; }
+  .action-strip > .search-field { flex-basis: 100%; max-width: none; }
+  .table-toolbar { align-items: stretch; flex-wrap: wrap; }
+  .table-toolbar .search-field { width: 100%; max-width: none; }
+  .toolbar-buttons { width: 100%; }
+  .toolbar-buttons .button { flex: 1; }
+  .settings-dual, .setting-group { grid-template-columns: 1fr; }
+  .settings-title { flex-direction: column; }
+  .login-shell { grid-template-columns: 1fr; }
+  .login-brand-panel { min-height: auto; padding: 24px; }
+  .login-copy { margin: 46px 0; }
+  .login-form-panel { min-height: auto; padding: 44px 22px; }
+}
+
+@media (max-width: 560px) {
+  .page-heading p { display: none; }
+  .page-heading h1 { max-width: 43vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 20px; }
+  .branch-picker { min-width: 0; width: 44px; padding: 0; justify-content: center; }
+  .branch-picker span, .branch-picker > svg:last-of-type { display: none; }
+  .notification-panel { left: 10px; right: 10px; width: auto; }
+  .page-content { padding: 14px 12px 34px; }
+  .view-stack { gap: 14px; }
+  .welcome-band { padding: 18px; }
+  .welcome-band h2 { font-size: 23px; }
+  .welcome-actions { display: grid; grid-template-columns: 1fr; }
+  .metric-grid, .report-metrics, .mini-metrics, .order-summary { grid-template-columns: 1fr; }
+  .metric-card, .mini-metrics > div, .order-summary > div { border-left: 0; border-top: 1px solid var(--line); }
+  .metric-card:first-child, .mini-metrics > div:first-child, .order-summary > div:first-child { border-top: 0; }
+  .metric-card { min-height: 138px; }
+  .order-summary > div { min-height: 78px; padding: 14px 16px; }
+  .action-strip.align-end > .button,
+  .action-strip.align-end > .date-input,
+  .action-strip.align-end > .segmented { width: 100%; }
+  .action-strip.align-end > .button { flex: 1 1 100%; }
+  .action-strip .segmented, .filter-chips, .module-tabs, .saved-views { overflow-x: auto; overscroll-behavior-inline: contain; }
+  .data-table { min-width: 820px; }
+  .table-toolbar { padding-inline: 12px; }
+  .table-footer { min-width: 500px; }
+  .approval-banner, .inventory-alert { align-items: flex-start; flex-wrap: wrap; }
+  .approval-banner > .button, .inventory-alert > .button { width: 100%; }
+  .order-detail { padding: 16px; }
+  .detail-actions { grid-template-columns: 1fr; }
+  .receipt-detail > div { align-items: flex-start; }
+  .branch-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feature-form-grid, .settings-form-grid, .product-form-grid, .login-two-columns { grid-template-columns: 1fr; }
+  .feature-form-grid .span-two, .settings-form-grid .span-two, .product-form-grid .span-two { grid-column: auto; }
+  .unit-editor > div { grid-template-columns: 1fr; padding: 10px; border: 1px solid var(--line); }
+  .inline-create-form, .inline-create-form.category-form { grid-template-columns: 1fr; }
+  .dialog-viewport { align-items: end; padding: 0; }
+  .feature-modal, .feature-modal.wide, .product-modal, .stock-modal {
+    width: 100%;
+    max-height: 92dvh;
+    padding: 18px;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-actions { position: sticky; bottom: -18px; margin-inline: -18px; padding: 14px 18px 18px; background: #fff; }
+  .modal-actions .button { flex: 1; }
+  .toast-stack { left: 10px; right: 10px; bottom: 10px; }
+  .app-toast { width: 100%; min-width: 0; max-width: none; }
+  .login-brand-panel { padding: 20px; }
+  .login-copy { margin: 38px 0 12px; }
+  .login-copy h1 { font-size: 30px; }
+  .login-form-panel { padding: 36px 18px; }
+}
