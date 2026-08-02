@@ -107,7 +107,6 @@ function BrandMark() {
   return (
     <div className="brand-mark" aria-hidden="true">
       <span>AL</span>
-      <i />
     </div>
   );
 }
@@ -218,37 +217,38 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
   const [period, setPeriod] = useState("Hari ini");
   return (
     <div className="view-stack">
-      <section className="welcome-band">
-        <div><p className="section-kicker">SELAMAT PAGI, PAK AGUNG</p><h2>Toko berjalan baik hari ini.</h2><span>Omzet sudah mencapai 68% dari rata-rata hari Minggu.</span></div>
-        <div className="welcome-actions">
-          <button className="button secondary" onClick={() => goTo("reports")}><Download size={17} /> Unduh laporan</button>
-          <button className="button primary" onClick={() => goTo("products")}><Plus size={18} /> Tambah produk</button>
-        </div>
+      <section className="dashboard-controls">
+        <div className="control-field"><span>Outlet</span><button><Store size={16} /> Antapani <ChevronDown size={15} /></button></div>
+        <div className="control-field"><span>Periode laporan</span><button><CalendarDays size={16} /> 2 Agustus 2026 <ChevronDown size={15} /></button></div>
+        <div className="control-field"><span>Dibandingkan dengan</span><button>Minggu lalu <ChevronDown size={15} /></button></div>
+        <div className="control-actions"><button className="button secondary" onClick={() => goTo("reports")}><Download size={16} /> Ekspor laporan</button></div>
       </section>
 
       <section className="metric-grid">
-        <article className="metric-card featured">
-          <div className="metric-head"><span className="metric-icon"><CircleDollarSign size={19} /></span><StatusPill tone="good"><ArrowUpRight size={13} /> 12,4%</StatusPill></div>
-          <p>Omzet hari ini</p><h3>Rp8.462.500</h3><span>142 transaksi dari 2 kasir</span>
+        <article className="metric-card">
+          <p>Penjualan kotor</p><h3>Rp8.462.500</h3><span className="metric-change positive"><ArrowUpRight size={13} /> 12,4% dari Minggu lalu</span>
         </article>
         <article className="metric-card">
-          <div className="metric-head"><span className="metric-icon amber"><WalletCards size={19} /></span><StatusPill tone="good"><ArrowUpRight size={13} /> 8,1%</StatusPill></div>
+          <p>Penjualan bersih</p><h3>Rp8.378.000</h3><span>Setelah retur dan diskon</span>
+        </article>
+        <article className="metric-card">
           <p>Laba kotor</p><h3>Rp1.684.200</h3><span>Margin rata-rata 19,9%</span>
         </article>
         <article className="metric-card">
-          <div className="metric-head"><span className="metric-icon blue"><ShoppingBag size={19} /></span><StatusPill tone="info">3 baru</StatusPill></div>
-          <p>Pesanan online</p><h3>12 pesanan</h3><span>3 perlu segera dikonfirmasi</span>
+          <p>Total transaksi</p><h3>142</h3><span>Rata-rata Rp59.595</span>
         </article>
         <article className="metric-card">
-          <div className="metric-head"><span className="metric-icon red"><Package size={19} /></span><StatusPill tone="danger"><ArrowDownRight size={13} /> 8 item</StatusPill></div>
-          <p>Stok perlu perhatian</p><h3>8 produk</h3><span>2 habis · 6 hampir habis</span>
+          <p>Retur & pembatalan</p><h3>Rp84.500</h3><span>2 transaksi dibatalkan</span>
+        </article>
+        <article className="metric-card">
+          <p>Pesanan online</p><h3>12</h3><span className="metric-change warning">3 perlu konfirmasi</span>
         </article>
       </section>
 
       <section className="dashboard-grid">
         <article className="surface sales-chart">
           <div className="surface-heading">
-            <div><p className="section-kicker">PENJUALAN</p><h3>Pergerakan omzet</h3></div>
+            <div><h3>Penjualan menurut waktu</h3><p className="heading-note">Jumlah penjualan kotor per jam</p></div>
             <div className="period-tabs">{["Hari ini", "7 hari", "30 hari"].map((item) => <button key={item} onClick={() => setPeriod(item)} className={period === item ? "active" : ""}>{item}</button>)}</div>
           </div>
           <div className="chart-summary"><strong>{period === "Hari ini" ? "Rp8,46 jt" : period === "7 hari" ? "Rp54,72 jt" : "Rp231,8 jt"}</strong><span><ArrowUpRight size={14} /> 12,4% dari periode sebelumnya</span></div>
@@ -259,7 +259,7 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
         </article>
 
         <article className="surface branch-performance">
-          <div className="surface-heading"><div><p className="section-kicker">CABANG</p><h3>Performa hari ini</h3></div><button className="icon-button"><MoreHorizontal size={19} /></button></div>
+          <div className="surface-heading"><div><h3>Penjualan per outlet</h3><p className="heading-note">Hari ini, pukul 10:51 WIB</p></div><button className="icon-button"><MoreHorizontal size={19} /></button></div>
           <div className="branch-list">
             <div className="branch-row"><span className="rank first">1</span><div><strong>Antapani</strong><small>142 transaksi</small></div><span><strong>Rp8,46 jt</strong><small className="positive">+12,4%</small></span></div>
             <div className="branch-row"><span className="rank">2</span><div><strong>Cicaheum</strong><small>118 transaksi</small></div><span><strong>Rp7,18 jt</strong><small className="positive">+6,8%</small></span></div>
@@ -271,13 +271,13 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
 
       <section className="dashboard-grid lower">
         <article className="surface recent-transactions">
-          <div className="surface-heading"><div><p className="section-kicker">AKTIVITAS TERBARU</p><h3>Transaksi terakhir</h3></div><button className="text-action" onClick={() => goTo("transactions")}>Lihat semua <ChevronRight size={15} /></button></div>
+          <div className="surface-heading"><div><h3>Transaksi terbaru</h3><p className="heading-note">Cabang Antapani</p></div><button className="text-action" onClick={() => goTo("transactions")}>Lihat semua <ChevronRight size={15} /></button></div>
           <div className="compact-table">
             {transactions.slice(0, 4).map((transaction) => <div className="transaction-row" key={transaction.id}><span className="transaction-icon"><ShoppingCart size={17} /></span><div><strong>{transaction.id}</strong><small>{transaction.time} · {transaction.cashier}</small></div><StatusPill tone={transaction.method === "Tempo" ? "warn" : transaction.method === "QRIS" ? "info" : "neutral"}>{transaction.method}</StatusPill><strong className="amount">{transaction.total}</strong></div>)}
           </div>
         </article>
         <article className="surface attention-card">
-          <div className="surface-heading"><div><p className="section-kicker">PERLU TINDAKAN</p><h3>Hari ini</h3></div><span className="attention-count">5</span></div>
+          <div className="surface-heading"><div><h3>Perlu ditindaklanjuti</h3><p className="heading-note">5 pekerjaan hari ini</p></div></div>
           <button className="attention-row" onClick={() => goTo("orders")}><span className="notice-symbol order"><ShoppingBag size={17} /></span><span><strong>3 pesanan menunggu</strong><small>Konfirmasi sebelum 11:30</small></span><ChevronRight size={17} /></button>
           <button className="attention-row" onClick={() => goTo("inventory")}><span className="notice-symbol stock"><Package size={17} /></span><span><strong>2 produk stok kritis</strong><small>Telur dan Kopi Kapal Api</small></span><ChevronRight size={17} /></button>
           <button className="attention-row" onClick={() => goTo("team")}><span className="notice-symbol user"><UserCheck size={17} /></span><span><strong>1 pegawai mendaftar</strong><small>Menunggu persetujuan akun</small></span><ChevronRight size={17} /></button>
@@ -289,16 +289,20 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
 
 function ProductsView() {
   const [query, setQuery] = useState("");
+  const [activeView, setActiveView] = useState("Semua");
+  const [selected, setSelected] = useState<string[]>([]);
   const filtered = useMemo(() => products.filter((product) => `${product.name} ${product.code} ${product.category}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  const allSelected = filtered.length > 0 && selected.length === filtered.length;
   return (
     <div className="view-stack">
-      <div className="action-strip"><div className="search-field"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama, kode, atau kategori produk..." /></div><button className="button secondary"><Download size={17} /> Impor Excel</button><button className="button primary"><Plus size={18} /> Produk baru</button></div>
-      <section className="mini-metrics"><div><span>Total produk</span><strong>486</strong><small>472 aktif</small></div><div><span>Kategori</span><strong>18</strong><small>2 kategori kosong</small></div><div><span>Stok menipis</span><strong className="warn-text">6</strong><small>Perlu pembelian</small></div><div><span>Stok habis</span><strong className="danger-text">2</strong><small>Tidak dapat dijual</small></div></section>
+      <div className="action-strip product-actions"><div><p className="helper-copy">486 produk · 18 kategori · diperbarui 3 menit lalu</p></div><button className="button secondary"><Download size={17} /> Impor / ekspor</button><button className="button primary"><Plus size={18} /> Tambah produk</button></div>
       <section className="surface data-surface">
-        <div className="table-toolbar"><div className="filter-chips"><button className="active">Semua produk</button><button>Tersedia</button><button>Stok menipis</button><button>Habis</button></div><button className="button compact secondary"><SlidersHorizontal size={16} /> Filter</button></div>
+        <div className="saved-views">{["Semua", "Aktif", "Stok menipis", "Habis", "Draf"].map((view) => <button key={view} className={activeView === view ? "active" : ""} onClick={() => setActiveView(view)}>{view}{view === "Stok menipis" && <b>6</b>}</button>)}</div>
+        <div className="table-toolbar"><div className="search-field"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk" /></div><div className="toolbar-buttons"><button className="button compact secondary"><SlidersHorizontal size={16} /> Filter</button><button className="button compact secondary">Urutkan <ChevronDown size={15} /></button></div></div>
+        {selected.length > 0 && <div className="bulk-bar"><strong>{selected.length} produk dipilih</strong><button>Ubah status</button><button>Atur kategori</button><button>Ekspor</button><button className="danger-action">Arsipkan</button></div>}
         <div className="data-table product-table">
-          <div className="table-head"><span>Produk</span><span>Kategori</span><span>Stok Antapani</span><span>Satuan dasar</span><span>Harga eceran</span><span>Status</span><span /></div>
-          {filtered.map((product, index) => <div className="table-row" key={product.code}><span className="product-cell"><i className={`product-thumb p${index % 4}`}>{product.name.slice(0, 1)}</i><span><strong>{product.name}</strong><small>{product.code}</small></span></span><span>{product.category}</span><span><strong>{product.stock}</strong></span><span>{product.base}</span><span><strong>{product.price}</strong></span><span><StatusPill tone={product.status === "Tersedia" ? "good" : product.status === "Kritis" ? "danger" : "warn"}>{product.status}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}
+          <div className="table-head"><span><input type="checkbox" aria-label="Pilih semua produk" checked={allSelected} onChange={() => setSelected(allSelected ? [] : filtered.map((product) => product.code))} /></span><span>Produk</span><span>Kategori</span><span>Stok Antapani</span><span>Satuan dasar</span><span>Harga jual</span><span>Status</span><span /></div>
+          {filtered.map((product) => <div className="table-row" key={product.code}><span><input type="checkbox" aria-label={`Pilih ${product.name}`} checked={selected.includes(product.code)} onChange={() => setSelected((current) => current.includes(product.code) ? current.filter((code) => code !== product.code) : [...current, product.code])} /></span><span className="product-cell"><span><strong>{product.name}</strong><small>{product.code}</small></span></span><span>{product.category}</span><span><strong>{product.stock}</strong></span><span>{product.base}</span><span><strong>{product.price}</strong></span><span><StatusPill tone={product.status === "Tersedia" ? "good" : product.status === "Kritis" ? "danger" : "warn"}>{product.status}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}
           {filtered.length === 0 && <div className="empty-state"><Search size={30} /><strong>Produk tidak ditemukan</strong><span>Coba gunakan nama atau kode yang berbeda.</span></div>}
         </div>
         <div className="table-footer"><span>Menampilkan {filtered.length} dari 486 produk</span><div><button disabled><ChevronDown size={16} /></button><b>1</b><button>2</button><button>3</button><button><ChevronRight size={16} /></button></div></div>
@@ -308,12 +312,15 @@ function ProductsView() {
 }
 
 function InventoryView() {
+  const [inventoryTab, setInventoryTab] = useState("Persediaan");
+  const [adjusting, setAdjusting] = useState<string | null>(null);
   return (
     <div className="view-stack">
-      <div className="action-strip align-end"><div className="segmented"><button className="active">Persediaan</button><button>Barang masuk</button><button>Transfer cabang</button><button>Stock opname</button></div><button className="button secondary"><History size={17} /> Riwayat stok</button><button className="button primary"><Truck size={18} /> Catat barang masuk</button></div>
-      <section className="inventory-alert"><span><PackageCheck size={21} /></span><div><strong>Jadwal pembelian berikutnya: Senin, 3 Agustus</strong><p>Ada 8 produk di bawah batas minimum. Siapkan daftar belanja untuk supplier.</p></div><button className="button light">Buat daftar belanja</button></section>
+      <div className="module-tabs">{["Persediaan", "Pesanan pembelian", "Penerimaan", "Transfer", "Stock opname"].map((tab) => <button key={tab} className={inventoryTab === tab ? "active" : ""} onClick={() => setInventoryTab(tab)}>{tab}</button>)}</div>
+      <div className="action-strip align-end"><p className="helper-copy">Cabang Antapani · Stok terakhir sinkron pukul 10:51</p><button className="button secondary"><History size={17} /> Riwayat penyesuaian</button><button className="button primary"><Truck size={18} /> Terima barang</button></div>
+      <section className="workflow-strip"><div><span className="step done"><Check size={14}/></span><p><strong>Pesanan dibuat</strong><small>PO-0826-018 · kemarin</small></p></div><ChevronRight size={16}/><div><span className="step current">2</span><p><strong>Dalam pengiriman</strong><small>Supplier Sumber Makmur</small></p></div><ChevronRight size={16}/><div><span className="step">3</span><p><strong>Menunggu penerimaan</strong><small>Estimasi hari ini</small></p></div><button className="button secondary compact">Buka pesanan</button></section>
       <section className="surface data-surface">
-        <div className="surface-heading inventory-title"><div><p className="section-kicker">STOK CABANG ANTAPANI</p><h3>Produk perlu perhatian</h3></div><div className="search-field small"><Search size={17} /><input placeholder="Cari produk..." /></div></div>
+        <div className="surface-heading inventory-title"><div><h3>Persediaan outlet</h3><p className="heading-note">8 produk berada di bawah batas minimum</p></div><div className="search-field small"><Search size={17} /><input placeholder="Cari produk" /></div></div>
         <div className="data-table stock-table">
           <div className="table-head"><span>Produk</span><span>Stok sekarang</span><span>Minimum</span><span>Penjualan 7 hari</span><span>Estimasi habis</span><span>Tindakan</span></div>
           {[
@@ -321,9 +328,10 @@ function InventoryView() {
             ["Kopi Kapal Api 65g", "23 sachet", "40 sachet", "116 sachet", "2 hari", "Menipis"],
             ["Rokok Surya 12", "96 bungkus", "120 bungkus", "284 bungkus", "3 hari", "Menipis"],
             ["Susu Kental Manis", "31 sachet", "36 sachet", "62 sachet", "4 hari", "Menipis"],
-          ].map((row, i) => <div className="table-row" key={row[0]}><span className="product-cell"><i className={`product-thumb p${i}`}>{row[0][0]}</i><strong>{row[0]}</strong></span><span><strong>{row[1]}</strong></span><span>{row[2]}</span><span>{row[3]}</span><span><StatusPill tone={row[5] === "Kritis" ? "danger" : "warn"}>{row[4]}</StatusPill></span><button className="text-button">Tambah stok</button></div>)}
+          ].map((row) => <div className="table-row" key={row[0]}><span className="product-cell"><strong>{row[0]}</strong></span><span><strong>{row[1]}</strong></span><span>{row[2]}</span><span>{row[3]}</span><span><StatusPill tone={row[5] === "Kritis" ? "danger" : "warn"}>{row[4]}</StatusPill></span><button className="text-button" onClick={() => setAdjusting(row[0])}>Sesuaikan stok</button></div>)}
         </div>
       </section>
+      {adjusting && <div className="modal-scrim" role="presentation" onMouseDown={() => setAdjusting(null)}><section className="stock-modal" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3 id="stock-modal-title">Sesuaikan stok</h3><p>{adjusting} · Cabang Antapani</p></div><button className="icon-button" onClick={() => setAdjusting(null)}><X size={18}/></button></div><label>Alasan penyesuaian<select defaultValue="received"><option value="received">Stok diterima</option><option value="count">Hasil hitung ulang</option><option value="damaged">Rusak / hilang</option><option value="return">Retur pelanggan</option></select></label><div className="stock-form-row"><label>Jumlah<input type="number" defaultValue="1" /></label><label>Satuan<select defaultValue="base"><option value="base">Satuan dasar</option><option value="box">Dus</option><option value="pack">Pak</option></select></label></div><label>Catatan<textarea placeholder="Tambahkan catatan untuk riwayat stok" /></label><div className="modal-actions"><button className="button secondary" onClick={() => setAdjusting(null)}>Batal</button><button className="button primary" onClick={() => setAdjusting(null)}>Simpan penyesuaian</button></div></section></div>}
     </div>
   );
 }
@@ -364,7 +372,7 @@ function TeamView() {
 }
 
 function ReportsView() {
-  return <div className="view-stack"><div className="action-strip align-end"><div className="segmented"><button className="active">Penjualan</button><button>Laba</button><button>Produk</button><button>Kasir</button><button>Stok</button></div><button className="button secondary"><CalendarDays size={17} /> 27 Jul – 2 Agu</button><button className="button primary"><Download size={17} /> Unduh Excel</button></div><section className="report-hero"><div><p className="section-kicker light-kicker">RINGKASAN MINGGU INI</p><h2>Rp54.720.500</h2><span>Total omzet dari 3 cabang</span></div><div className="report-breakdown"><span><small>Laba kotor</small><strong>Rp10.888.400</strong></span><span><small>Total transaksi</small><strong>954</strong></span><span><small>Rata-rata transaksi</small><strong>Rp57.359</strong></span></div></section><section className="dashboard-grid"><article className="surface sales-chart"><div className="surface-heading"><div><p className="section-kicker">TREN MINGGUAN</p><h3>Omzet per hari</h3></div><StatusPill tone="good"><ArrowUpRight size={13} /> 9,8%</StatusPill></div><div className="weekly-bars">{[["Sen", 66], ["Sel", 74], ["Rab", 59], ["Kam", 82], ["Jum", 72], ["Sab", 94], ["Min", 86]].map((bar, i) => <div key={bar[0]}><span>Rp{[6.4,7.2,5.8,8.1,7.0,9.4,8.5][i]}jt</span><i style={{height: `${bar[1]}%`}} className={i === 5 ? "peak" : ""} /><small>{bar[0]}</small></div>)}</div></article><article className="surface"><div className="surface-heading"><div><p className="section-kicker">PRODUK TERLARIS</p><h3>Berdasarkan omzet</h3></div></div><div className="top-products">{[["Rokok Surya 12", "Rp8,42 jt", "96%"], ["Minyakita 1 Liter", "Rp6,18 jt", "72%"], ["Beras Ramos 5kg", "Rp4,92 jt", "58%"], ["Indomie Goreng", "Rp3,81 jt", "44%"]].map((row, i) => <div key={row[0]}><span className="rank">{i + 1}</span><span><strong>{row[0]}</strong><i><b style={{width: row[2]}} /></i></span><strong>{row[1]}</strong></div>)}</div></article></section></div>;
+  return <div className="view-stack"><div className="module-tabs">{["Ringkasan", "Penjualan", "Laba", "Produk", "Kasir", "Persediaan"].map((tab, index) => <button key={tab} className={index === 0 ? "active" : ""}>{tab}</button>)}</div><div className="action-strip align-end"><div className="control-field compact-control"><span>Outlet</span><button>Semua outlet <ChevronDown size={15}/></button></div><div className="control-field compact-control"><span>Periode</span><button><CalendarDays size={15}/> 27 Jul – 2 Agu</button></div><button className="button primary"><Download size={17} /> Ekspor laporan</button></div><section className="metric-grid report-metrics"><article className="metric-card"><p>Penjualan kotor</p><h3>Rp54.720.500</h3><span className="metric-change positive"><ArrowUpRight size={13}/> 9,8%</span></article><article className="metric-card"><p>Penjualan bersih</p><h3>Rp53.886.000</h3><span>Setelah retur dan diskon</span></article><article className="metric-card"><p>Laba kotor</p><h3>Rp10.888.400</h3><span>Margin 20,2%</span></article><article className="metric-card"><p>Total transaksi</p><h3>954</h3><span>Rata-rata Rp57.359</span></article></section><section className="dashboard-grid"><article className="surface sales-chart"><div className="surface-heading"><div><h3>Penjualan per hari</h3><p className="heading-note">Semua outlet</p></div><StatusPill tone="good"><ArrowUpRight size={13} /> 9,8%</StatusPill></div><div className="weekly-bars">{[["Sen", 66], ["Sel", 74], ["Rab", 59], ["Kam", 82], ["Jum", 72], ["Sab", 94], ["Min", 86]].map((bar, i) => <div key={bar[0]}><span>Rp{[6.4,7.2,5.8,8.1,7.0,9.4,8.5][i]}jt</span><i style={{height: `${bar[1]}%`}} className={i === 5 ? "peak" : ""} /><small>{bar[0]}</small></div>)}</div></article><article className="surface top-products-surface"><div className="surface-heading"><div><h3>Produk terlaris</h3><p className="heading-note">Diurutkan berdasarkan omzet</p></div></div><div className="top-products">{[["Rokok Surya 12", "Rp8,42 jt", "96%"], ["Minyakita 1 Liter", "Rp6,18 jt", "72%"], ["Beras Ramos 5kg", "Rp4,92 jt", "58%"], ["Indomie Goreng", "Rp3,81 jt", "44%"]].map((row, i) => <div key={row[0]}><span className="rank">{i + 1}</span><span><strong>{row[0]}</strong><i><b style={{width: row[2]}} /></i></span><strong>{row[1]}</strong></div>)}</div></article></section></div>;
 }
 
 const settingGroups = [
