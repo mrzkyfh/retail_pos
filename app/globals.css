@@ -760,17 +760,13 @@ body { background: var(--canvas); color: var(--ink); font-size: 13px; }
 .login-brand-panel { min-height: 100vh; display: flex; flex-direction: column; padding: 36px 42px; color: #fff; background: #145d35; }
 .login-brand { display: flex; align-items: center; gap: 10px; }
 .login-brand .brand-mark { color: #145d35; background: #fff; }
-.login-brand > span, .login-status > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.login-brand > span { display: flex; flex-direction: column; gap: 2px; }
 .login-brand strong { font-size: 13px; }
 .login-brand small { color: #bcd3c5; font-size: 9px; }
 .login-copy { max-width: 510px; margin: auto 0; }
 .login-copy p, .login-form > div:first-child p { margin: 0; color: #afd0bb; font-size: 9px; font-weight: 750; letter-spacing: .12em; }
 .login-copy h1 { margin: 12px 0 15px; font-size: clamp(30px, 4vw, 48px); line-height: 1.08; letter-spacing: -.045em; font-weight: 660; }
 .login-copy > span { display: block; max-width: 440px; color: #c5d8cc; font-size: 12px; line-height: 1.65; }
-.login-status { display: flex; align-items: center; gap: 10px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.18); }
-.login-status .live-dot { box-shadow: 0 0 0 3px rgba(170,226,188,.15); }
-.login-status strong { font-size: 10px; }
-.login-status small { color: #a9c8b5; font-size: 8px; }
 .login-form-panel { min-height: 100vh; display: grid; place-items: center; padding: 30px; }
 .login-form { width: min(390px, 100%); display: flex; flex-direction: column; gap: 15px; }
 .login-form > div:first-child { margin-bottom: 12px; }

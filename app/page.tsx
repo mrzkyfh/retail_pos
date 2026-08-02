@@ -222,7 +222,6 @@ function LoginScreen() {
       <section className="login-brand-panel">
         <div className="login-brand"><BrandMark /><span><strong>Agung Lestari</strong><small>Pusat operasional toko</small></span></div>
         <div className="login-copy"><p>ADMIN TOKO</p><h1>Kelola seluruh cabang dari satu tempat.</h1><span>Produk, persediaan, transaksi, dan pegawai tersimpan aman di database pusat.</span></div>
-        <div className="login-status"><span className="live-dot" /><span><strong>Backend aktif</strong><small>Terhubung dengan Supabase</small></span></div>
       </section>
       <section className="login-form-panel">
         <form className="login-form" onSubmit={submitAuth}>
