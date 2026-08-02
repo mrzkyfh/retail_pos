@@ -17,6 +17,8 @@ import {
   FileText,
   History,
   LayoutDashboard,
+  LoaderCircle,
+  LogOut,
   Menu,
   Minus,
   MoreHorizontal,
@@ -35,7 +37,9 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 
 type ViewId =
   | "dashboard"
@@ -50,6 +54,14 @@ type ViewId =
   | "settings";
 
 type IconType = typeof LayoutDashboard;
+
+type AppProfile = {
+  id: string;
+  full_name: string;
+  role: "owner" | "admin" | "cashier";
+  status: "pending" | "active" | "rejected" | "disabled";
+  organization_id: string | null;
+};
 
 const primaryNavigation: { id: ViewId; label: string; icon: IconType; badge?: string }[] = [
   { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
@@ -115,7 +127,91 @@ function StatusPill({ children, tone = "neutral" }: { children: React.ReactNode;
   return <span className={`status-pill ${tone}`}>{children}</span>;
 }
 
-function Sidebar({ current, onChange, open, onClose }: { current: ViewId; onChange: (id: ViewId) => void; open: boolean; onClose: () => void }) {
+function LoginScreen() {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const submitAuth = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setNotice("");
+    if (mode === "register") {
+      if (password !== confirmPassword) {
+        setError("Konfirmasi kata sandi tidak sama.");
+        setLoading(false);
+        return;
+      }
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { full_name: fullName.trim(), phone: phone.trim(), address: address.trim() } },
+      });
+      if (signUpError) setError(signUpError.message);
+      else if (!data.session) setNotice("Pendaftaran berhasil. Periksa email untuk mengonfirmasi akun, lalu masuk kembali.");
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) setError("Email atau kata sandi tidak sesuai.");
+    }
+    setLoading(false);
+  };
+
+  const resetPassword = async () => {
+    if (!email.trim()) {
+      setError("Isi email terlebih dahulu untuk mengatur ulang kata sandi.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin });
+    if (resetError) setError(resetError.message);
+    else setNotice("Tautan pengaturan ulang kata sandi sudah dikirim ke email.");
+    setLoading(false);
+  };
+
+  return (
+    <main className="login-shell">
+      <section className="login-brand-panel">
+        <div className="login-brand"><BrandMark /><span><strong>Agung Lestari</strong><small>Pusat operasional toko</small></span></div>
+        <div className="login-copy"><p>ADMIN TOKO</p><h1>Kelola seluruh cabang dari satu tempat.</h1><span>Produk, persediaan, transaksi, dan pegawai tersimpan aman di database pusat.</span></div>
+        <div className="login-status"><span className="live-dot" /><span><strong>Backend aktif</strong><small>Terhubung dengan Supabase</small></span></div>
+      </section>
+      <section className="login-form-panel">
+        <form className="login-form" onSubmit={submitAuth}>
+          <div><p>{mode === "login" ? "SELAMAT DATANG" : "PENDAFTARAN AKUN"}</p><h2>{mode === "login" ? "Masuk ke akun admin" : "Buat akun pertama"}</h2><span>{mode === "login" ? "Gunakan akun yang sudah dibuat di Supabase." : "Akun pertama otomatis menjadi owner. Akun berikutnya menunggu persetujuan."}</span></div>
+          {mode === "register" && <><label>Nama lengkap<input value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Nama lengkap" autoComplete="name" required /></label><div className="login-two-columns"><label>Nomor HP<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="08xxxxxxxxxx" autoComplete="tel" /></label><label>Alamat<input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Alamat tempat tinggal" /></label></div></>}
+          <label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@tokolestari.com" autoComplete="email" required /></label>
+          <label>Kata sandi<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Masukkan kata sandi" autoComplete="current-password" required /></label>
+          {mode === "register" && <label>Ulangi kata sandi<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Ulangi kata sandi" autoComplete="new-password" required /></label>}
+          {error && <div className="login-message error">{error}</div>}
+          {notice && <div className="login-message success">{notice}</div>}
+          <button className="button primary login-submit" disabled={loading}>{loading ? <><LoaderCircle className="spin" size={17}/> Memproses...</> : mode === "login" ? "Masuk" : "Daftar akun"}</button>
+          {mode === "login" && <button type="button" className="forgot-button" onClick={resetPassword} disabled={loading}>Lupa kata sandi?</button>}
+          <div className="auth-switch"><span>{mode === "login" ? "Belum mempunyai akun?" : "Sudah mempunyai akun?"}</span><button type="button" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setNotice(""); }}>{mode === "login" ? "Daftar" : "Masuk"}</button></div>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function AccountState({ profile, onLogout }: { profile: AppProfile; onLogout: () => void }) {
+  const copy = profile.status === "pending"
+    ? ["Akun menunggu persetujuan", "Admin toko perlu menyetujui akun ini sebelum dashboard dapat digunakan."]
+    : profile.status === "rejected"
+      ? ["Pendaftaran akun ditolak", "Hubungi admin toko jika status ini perlu diperiksa kembali."]
+      : ["Akun dinonaktifkan", "Hubungi owner atau admin toko untuk mengaktifkan kembali akun ini."];
+  return <main className="account-state"><BrandMark /><h1>{copy[0]}</h1><p>{copy[1]}</p><span>{profile.full_name}</span><button className="button secondary" onClick={onLogout}><LogOut size={16}/> Keluar</button></main>;
+}
+
+function Sidebar({ current, onChange, open, onClose, profile, onLogout }: { current: ViewId; onChange: (id: ViewId) => void; open: boolean; onClose: () => void; profile: AppProfile; onLogout: () => void }) {
   const go = (id: ViewId) => {
     onChange(id);
     onClose();
@@ -159,12 +255,12 @@ function Sidebar({ current, onChange, open, onClose }: { current: ViewId; onChan
         <div className="sidebar-foot">
           <div className="sync-card">
             <div className="sync-icon"><Check size={15} strokeWidth={2.5} /></div>
-            <div><strong>Data tersinkron</strong><span>Diperbarui 10:51 WIB</span></div>
+            <div><strong>Backend terhubung</strong><span>Supabase aktif</span></div>
           </div>
           <div className="user-card">
-            <div className="avatar">MA</div>
-            <div><strong>Muhammad Agung</strong><span>Owner</span></div>
-            <MoreHorizontal size={18} />
+            <div className="avatar">{profile.full_name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div>
+            <div><strong>{profile.full_name}</strong><span>{profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : "Kasir"}</span></div>
+            <button className="icon-button logout-button" onClick={onLogout} aria-label="Keluar dari akun"><LogOut size={16} /></button>
           </div>
         </div>
       </aside>
@@ -205,9 +301,9 @@ function NotificationPanel({ open, onClose }: { open: boolean; onClose: () => vo
   return (
     <div className="notification-panel">
       <div className="panel-heading"><div><p>NOTIFIKASI</p><h3>Perlu perhatian</h3></div><button className="icon-button" onClick={onClose}><X size={18} /></button></div>
-      <button className="notification-row"><span className="notice-symbol order"><ShoppingBag size={17} /></span><span><strong>Pesanan baru dari Bu Ratna</strong><small>7 produk menunggu konfirmasi stok · 5 menit lalu</small></span></button>
-      <button className="notification-row"><span className="notice-symbol stock"><Package size={17} /></span><span><strong>Stok Telur Ayam kritis</strong><small>Tersisa 7 kg di Cabang Antapani</small></span></button>
-      <button className="notification-row"><span className="notice-symbol user"><UserCheck size={17} /></span><span><strong>Pendaftaran pegawai baru</strong><small>Rian Saputra menunggu persetujuan</small></span></button>
+      <button className="notification-row"><span className="notice-symbol order"><Check size={17} /></span><span><strong>Backend Supabase terhubung</strong><small>Autentikasi dan database siap digunakan</small></span></button>
+      <button className="notification-row"><span className="notice-symbol stock"><Package size={17} /></span><span><strong>Pantau stok minimum</strong><small>Produk baru akan muncul otomatis di persediaan</small></span></button>
+      <button className="notification-row"><span className="notice-symbol user"><UserCheck size={17} /></span><span><strong>Persetujuan pegawai aktif</strong><small>Akun setelah owner akan berstatus menunggu</small></span></button>
       <button className="text-action">Lihat semua notifikasi <ChevronRight size={15} /></button>
     </div>
   );
@@ -215,6 +311,58 @@ function NotificationPanel({ open, onClose }: { open: boolean; onClose: () => vo
 
 function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
   const [period, setPeriod] = useState("Hari ini");
+  const [summary, setSummary] = useState({ grossSales: 0, netSales: 0, grossProfit: 0, transactions: 0, cancelled: 0, pendingOrders: 0 });
+  const [hourlySales, setHourlySales] = useState<number[]>(Array(9).fill(0));
+  const [recentSales, setRecentSales] = useState<Array<{ id: string; time: string; method: string; total: string }>>([]);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      const { data: branches } = await supabase.from("branches").select("id").eq("is_active", true).order("created_at").limit(1);
+      const branchId = branches?.[0]?.id;
+      if (!branchId) return;
+      const now = new Date();
+      const dateParts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+      const part = (type: string) => dateParts.find((item) => item.type === type)?.value ?? "";
+      const date = `${part("year")}-${part("month")}-${part("day")}`;
+      const start = `${date}T00:00:00+07:00`;
+      const nextDay = new Date(`${date}T00:00:00+07:00`);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const end = nextDay.toISOString();
+      const [summaryResult, salesResult, orderResult] = await Promise.all([
+        supabase.from("dashboard_daily_summary").select("transaction_count,gross_sales,gross_profit,cancelled_amount").eq("branch_id", branchId).eq("sale_date", date).maybeSingle(),
+        supabase.from("sales").select("transaction_number,occurred_at,total_amount,status,payments(method)").eq("branch_id", branchId).gte("occurred_at", start).lt("occurred_at", end).order("occurred_at", { ascending: false }),
+        supabase.from("online_orders").select("id", { count: "exact", head: true }).eq("branch_id", branchId).eq("status", "pending"),
+      ]);
+      const summaryRow = summaryResult.data;
+      const grossSales = Number(summaryRow?.gross_sales ?? 0);
+      const cancelled = Number(summaryRow?.cancelled_amount ?? 0);
+      setSummary({
+        grossSales,
+        netSales: Math.max(grossSales - cancelled, 0),
+        grossProfit: Number(summaryRow?.gross_profit ?? 0),
+        transactions: Number(summaryRow?.transaction_count ?? 0),
+        cancelled,
+        pendingOrders: orderResult.count ?? 0,
+      });
+      const buckets = Array(9).fill(0) as number[];
+      const sales = (salesResult.data ?? []) as unknown as Array<{ transaction_number: string; occurred_at: string; total_amount: number; status: string; payments: Array<{ method: string }> }>;
+      sales.filter((sale) => sale.status === "completed").forEach((sale) => {
+        const hour = Number(new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", hour12: false }).format(new Date(sale.occurred_at)));
+        if (hour >= 8 && hour <= 16) buckets[hour - 8] += Number(sale.total_amount);
+      });
+      setHourlySales(buckets);
+      setRecentSales(sales.slice(0, 4).map((sale) => ({
+        id: sale.transaction_number,
+        time: new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }).format(new Date(sale.occurred_at)),
+        method: sale.payments?.[0]?.method?.toUpperCase() ?? "—",
+        total: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(sale.total_amount)),
+      })));
+    };
+    void loadDashboard();
+  }, []);
+
+  const rupiah = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+  const maxHourly = Math.max(...hourlySales, 1);
   return (
     <div className="view-stack">
       <section className="dashboard-controls">
@@ -226,22 +374,22 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
 
       <section className="metric-grid">
         <article className="metric-card">
-          <p>Penjualan kotor</p><h3>Rp8.462.500</h3><span className="metric-change positive"><ArrowUpRight size={13} /> 12,4% dari Minggu lalu</span>
+          <p>Penjualan kotor</p><h3>{rupiah(summary.grossSales)}</h3><span>Data transaksi hari ini</span>
         </article>
         <article className="metric-card">
-          <p>Penjualan bersih</p><h3>Rp8.378.000</h3><span>Setelah retur dan diskon</span>
+          <p>Penjualan bersih</p><h3>{rupiah(summary.netSales)}</h3><span>Setelah retur dan pembatalan</span>
         </article>
         <article className="metric-card">
-          <p>Laba kotor</p><h3>Rp1.684.200</h3><span>Margin rata-rata 19,9%</span>
+          <p>Laba kotor</p><h3>{rupiah(summary.grossProfit)}</h3><span>Snapshot harga modal</span>
         </article>
         <article className="metric-card">
-          <p>Total transaksi</p><h3>142</h3><span>Rata-rata Rp59.595</span>
+          <p>Total transaksi</p><h3>{summary.transactions}</h3><span>Transaksi selesai</span>
         </article>
         <article className="metric-card">
-          <p>Retur & pembatalan</p><h3>Rp84.500</h3><span>2 transaksi dibatalkan</span>
+          <p>Retur & pembatalan</p><h3>{rupiah(summary.cancelled)}</h3><span>Hari ini</span>
         </article>
         <article className="metric-card">
-          <p>Pesanan online</p><h3>12</h3><span className="metric-change warning">3 perlu konfirmasi</span>
+          <p>Pesanan online</p><h3>{summary.pendingOrders}</h3><span className="metric-change warning">Menunggu konfirmasi</span>
         </article>
       </section>
 
@@ -251,9 +399,9 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
             <div><h3>Penjualan menurut waktu</h3><p className="heading-note">Jumlah penjualan kotor per jam</p></div>
             <div className="period-tabs">{["Hari ini", "7 hari", "30 hari"].map((item) => <button key={item} onClick={() => setPeriod(item)} className={period === item ? "active" : ""}>{item}</button>)}</div>
           </div>
-          <div className="chart-summary"><strong>{period === "Hari ini" ? "Rp8,46 jt" : period === "7 hari" ? "Rp54,72 jt" : "Rp231,8 jt"}</strong><span><ArrowUpRight size={14} /> 12,4% dari periode sebelumnya</span></div>
+          <div className="chart-summary"><strong>{rupiah(summary.grossSales)}</strong><span>Data langsung dari transaksi tersinkron</span></div>
           <div className="bar-chart" aria-label="Grafik penjualan per jam">
-            {[42, 58, 48, 70, 64, 84, 76, 96, 72].map((height, index) => <div className="bar-column" key={index}><div style={{ height: `${height}%` }} className={index === 7 ? "peak" : ""}><i /></div><span>{["08", "09", "10", "11", "12", "13", "14", "15", "16"][index]}</span></div>)}
+            {hourlySales.map((value, index) => <div className="bar-column" key={index}><div style={{ height: `${Math.max((value / maxHourly) * 92, value > 0 ? 8 : 1)}%` }} className={value === maxHourly && value > 0 ? "peak" : ""}><i /></div><span>{["08", "09", "10", "11", "12", "13", "14", "15", "16"][index]}</span></div>)}
             <div className="average-line"><span>rata-rata</span></div>
           </div>
         </article>
@@ -261,9 +409,7 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
         <article className="surface branch-performance">
           <div className="surface-heading"><div><h3>Penjualan per outlet</h3><p className="heading-note">Hari ini, pukul 10:51 WIB</p></div><button className="icon-button"><MoreHorizontal size={19} /></button></div>
           <div className="branch-list">
-            <div className="branch-row"><span className="rank first">1</span><div><strong>Antapani</strong><small>142 transaksi</small></div><span><strong>Rp8,46 jt</strong><small className="positive">+12,4%</small></span></div>
-            <div className="branch-row"><span className="rank">2</span><div><strong>Cicaheum</strong><small>118 transaksi</small></div><span><strong>Rp7,18 jt</strong><small className="positive">+6,8%</small></span></div>
-            <div className="branch-row"><span className="rank">3</span><div><strong>Ujung Berung</strong><small>91 transaksi</small></div><span><strong>Rp5,92 jt</strong><small className="negative">−2,1%</small></span></div>
+            <div className="branch-row"><span className="rank first">1</span><div><strong>Antapani</strong><small>{summary.transactions} transaksi</small></div><span><strong>{rupiah(summary.grossSales)}</strong><small className="positive">Aktif</small></span></div>
           </div>
           <button className="text-action" onClick={() => goTo("branches")}>Bandingkan cabang <ChevronRight size={15} /></button>
         </article>
@@ -273,14 +419,15 @@ function Dashboard({ goTo }: { goTo: (id: ViewId) => void }) {
         <article className="surface recent-transactions">
           <div className="surface-heading"><div><h3>Transaksi terbaru</h3><p className="heading-note">Cabang Antapani</p></div><button className="text-action" onClick={() => goTo("transactions")}>Lihat semua <ChevronRight size={15} /></button></div>
           <div className="compact-table">
-            {transactions.slice(0, 4).map((transaction) => <div className="transaction-row" key={transaction.id}><span className="transaction-icon"><ShoppingCart size={17} /></span><div><strong>{transaction.id}</strong><small>{transaction.time} · {transaction.cashier}</small></div><StatusPill tone={transaction.method === "Tempo" ? "warn" : transaction.method === "QRIS" ? "info" : "neutral"}>{transaction.method}</StatusPill><strong className="amount">{transaction.total}</strong></div>)}
+            {recentSales.map((sale) => <div className="transaction-row" key={sale.id}><span className="transaction-icon"><ShoppingCart size={17} /></span><div><strong>{sale.id}</strong><small>{sale.time} · tersinkron</small></div><StatusPill tone={sale.method === "QRIS" ? "info" : "neutral"}>{sale.method}</StatusPill><strong className="amount">{sale.total}</strong></div>)}
+            {recentSales.length === 0 && <div className="compact-empty">Belum ada transaksi hari ini.</div>}
           </div>
         </article>
         <article className="surface attention-card">
-          <div className="surface-heading"><div><h3>Perlu ditindaklanjuti</h3><p className="heading-note">5 pekerjaan hari ini</p></div></div>
-          <button className="attention-row" onClick={() => goTo("orders")}><span className="notice-symbol order"><ShoppingBag size={17} /></span><span><strong>3 pesanan menunggu</strong><small>Konfirmasi sebelum 11:30</small></span><ChevronRight size={17} /></button>
-          <button className="attention-row" onClick={() => goTo("inventory")}><span className="notice-symbol stock"><Package size={17} /></span><span><strong>2 produk stok kritis</strong><small>Telur dan Kopi Kapal Api</small></span><ChevronRight size={17} /></button>
-          <button className="attention-row" onClick={() => goTo("team")}><span className="notice-symbol user"><UserCheck size={17} /></span><span><strong>1 pegawai mendaftar</strong><small>Menunggu persetujuan akun</small></span><ChevronRight size={17} /></button>
+          <div className="surface-heading"><div><h3>Perlu ditindaklanjuti</h3><p className="heading-note">Data operasional</p></div></div>
+          <button className="attention-row" onClick={() => goTo("orders")}><span className="notice-symbol order"><ShoppingBag size={17} /></span><span><strong>{summary.pendingOrders} pesanan menunggu</strong><small>Konfirmasi sebelum stok direservasi</small></span><ChevronRight size={17} /></button>
+          <button className="attention-row" onClick={() => goTo("inventory")}><span className="notice-symbol stock"><Package size={17} /></span><span><strong>Periksa persediaan</strong><small>Stok minimum dihitung per produk</small></span><ChevronRight size={17} /></button>
+          <button className="attention-row" onClick={() => goTo("team")}><span className="notice-symbol user"><UserCheck size={17} /></span><span><strong>Kelola akses pegawai</strong><small>Akun baru memerlukan persetujuan admin</small></span><ChevronRight size={17} /></button>
         </article>
       </section>
     </div>
@@ -291,47 +438,194 @@ function ProductsView() {
   const [query, setQuery] = useState("");
   const [activeView, setActiveView] = useState("Semua");
   const [selected, setSelected] = useState<string[]>([]);
-  const filtered = useMemo(() => products.filter((product) => `${product.name} ${product.code} ${product.category}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  const [liveProducts, setLiveProducts] = useState<Array<{ id: string; name: string; code: string; category: string; stock: string; base: string; price: string; status: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [lookups, setLookups] = useState<{ branches: Array<{ id: string; name: string }>; categories: Array<{ id: string; name: string }>; units: Array<{ id: string; name: string }> }>({ branches: [], categories: [], units: [] });
+  const [form, setForm] = useState({ name: "", code: "", branchId: "", categoryId: "", unitId: "", sellingPrice: "", initialStock: "0", minimumStock: "0" });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const loadProducts = async () => {
+    setLoading(true);
+    setLoadError("");
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, code, minimum_stock, is_active, categories(name), units!products_base_unit_id_fkey(name), product_units(selling_price,is_default_sale_unit), branch_products(stock_base_qty)")
+      .order("name");
+    if (error) {
+      setLoadError("Produk belum dapat dimuat dari database.");
+      setLiveProducts([]);
+    } else {
+      const mapped = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
+        const category = row.categories as { name?: string } | null;
+        const unit = row.units as { name?: string } | null;
+        const unitPrices = (row.product_units as Array<{ selling_price: number; is_default_sale_unit: boolean }> | null) ?? [];
+        const stocks = (row.branch_products as Array<{ stock_base_qty: number }> | null) ?? [];
+        const stock = Number(stocks[0]?.stock_base_qty ?? 0);
+        const minimum = Number(row.minimum_stock ?? 0);
+        const price = Number(unitPrices.find((item) => item.is_default_sale_unit)?.selling_price ?? unitPrices[0]?.selling_price ?? 0);
+        return {
+          id: String(row.id),
+          name: String(row.name),
+          code: String(row.code),
+          category: category?.name ?? "Tanpa kategori",
+          stock: `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 3 }).format(stock)} ${unit?.name ?? "unit"}`,
+          base: unit?.name ?? "—",
+          price: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(price),
+          status: stock <= 0 ? "Kritis" : stock <= minimum ? "Menipis" : "Tersedia",
+        };
+      });
+      setLiveProducts(mapped);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { void loadProducts(); }, []);
+
+  const openCreate = async () => {
+    setCreateOpen(true);
+    setFormError("");
+    const [branchResult, categoryResult, unitResult] = await Promise.all([
+      supabase.from("branches").select("id,name").eq("is_active", true).order("name"),
+      supabase.from("categories").select("id,name").eq("is_active", true).order("name"),
+      supabase.from("units").select("id,name").order("name"),
+    ]);
+    const nextLookups = {
+      branches: (branchResult.data ?? []) as Array<{ id: string; name: string }>,
+      categories: (categoryResult.data ?? []) as Array<{ id: string; name: string }>,
+      units: (unitResult.data ?? []) as Array<{ id: string; name: string }>,
+    };
+    setLookups(nextLookups);
+    setForm((current) => ({
+      ...current,
+      branchId: current.branchId || nextLookups.branches[0]?.id || "",
+      categoryId: current.categoryId || nextLookups.categories[0]?.id || "",
+      unitId: current.unitId || nextLookups.units[0]?.id || "",
+    }));
+  };
+
+  const createProduct = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError("");
+    const { error } = await supabase.rpc("admin_create_product", {
+      p_branch_id: form.branchId,
+      p_name: form.name.trim(),
+      p_code: form.code.trim(),
+      p_category_id: form.categoryId || null,
+      p_base_unit_id: form.unitId,
+      p_selling_price: Number(form.sellingPrice || 0),
+      p_initial_stock: Number(form.initialStock || 0),
+      p_minimum_stock: Number(form.minimumStock || 0),
+    });
+    if (error) {
+      setFormError(error.message.includes("products_organization_id_code_key") ? "Kode produk sudah digunakan." : error.message);
+    } else {
+      setCreateOpen(false);
+      setForm({ name: "", code: "", branchId: form.branchId, categoryId: form.categoryId, unitId: form.unitId, sellingPrice: "", initialStock: "0", minimumStock: "0" });
+      await loadProducts();
+    }
+    setSaving(false);
+  };
+
+  const filtered = useMemo(() => liveProducts.filter((product) => `${product.name} ${product.code} ${product.category}`.toLowerCase().includes(query.toLowerCase())), [liveProducts, query]);
   const allSelected = filtered.length > 0 && selected.length === filtered.length;
   return (
     <div className="view-stack">
-      <div className="action-strip product-actions"><div><p className="helper-copy">486 produk · 18 kategori · diperbarui 3 menit lalu</p></div><button className="button secondary"><Download size={17} /> Impor / ekspor</button><button className="button primary"><Plus size={18} /> Tambah produk</button></div>
+      <div className="action-strip product-actions"><div><p className="helper-copy">{liveProducts.length} produk tersimpan di Supabase</p></div><button className="button secondary"><Download size={17} /> Impor / ekspor</button><button className="button primary" onClick={openCreate}><Plus size={18} /> Tambah produk</button></div>
       <section className="surface data-surface">
         <div className="saved-views">{["Semua", "Aktif", "Stok menipis", "Habis", "Draf"].map((view) => <button key={view} className={activeView === view ? "active" : ""} onClick={() => setActiveView(view)}>{view}{view === "Stok menipis" && <b>6</b>}</button>)}</div>
         <div className="table-toolbar"><div className="search-field"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk" /></div><div className="toolbar-buttons"><button className="button compact secondary"><SlidersHorizontal size={16} /> Filter</button><button className="button compact secondary">Urutkan <ChevronDown size={15} /></button></div></div>
         {selected.length > 0 && <div className="bulk-bar"><strong>{selected.length} produk dipilih</strong><button>Ubah status</button><button>Atur kategori</button><button>Ekspor</button><button className="danger-action">Arsipkan</button></div>}
         <div className="data-table product-table">
-          <div className="table-head"><span><input type="checkbox" aria-label="Pilih semua produk" checked={allSelected} onChange={() => setSelected(allSelected ? [] : filtered.map((product) => product.code))} /></span><span>Produk</span><span>Kategori</span><span>Stok Antapani</span><span>Satuan dasar</span><span>Harga jual</span><span>Status</span><span /></div>
-          {filtered.map((product) => <div className="table-row" key={product.code}><span><input type="checkbox" aria-label={`Pilih ${product.name}`} checked={selected.includes(product.code)} onChange={() => setSelected((current) => current.includes(product.code) ? current.filter((code) => code !== product.code) : [...current, product.code])} /></span><span className="product-cell"><span><strong>{product.name}</strong><small>{product.code}</small></span></span><span>{product.category}</span><span><strong>{product.stock}</strong></span><span>{product.base}</span><span><strong>{product.price}</strong></span><span><StatusPill tone={product.status === "Tersedia" ? "good" : product.status === "Kritis" ? "danger" : "warn"}>{product.status}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}
-          {filtered.length === 0 && <div className="empty-state"><Search size={30} /><strong>Produk tidak ditemukan</strong><span>Coba gunakan nama atau kode yang berbeda.</span></div>}
+          <div className="table-head"><span><input type="checkbox" aria-label="Pilih semua produk" checked={allSelected} onChange={() => setSelected(allSelected ? [] : filtered.map((product) => product.id))} /></span><span>Produk</span><span>Kategori</span><span>Stok Antapani</span><span>Satuan dasar</span><span>Harga jual</span><span>Status</span><span /></div>
+          {filtered.map((product) => <div className="table-row" key={product.id}><span><input type="checkbox" aria-label={`Pilih ${product.name}`} checked={selected.includes(product.id)} onChange={() => setSelected((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id])} /></span><span className="product-cell"><span><strong>{product.name}</strong><small>{product.code}</small></span></span><span>{product.category}</span><span><strong>{product.stock}</strong></span><span>{product.base}</span><span><strong>{product.price}</strong></span><span><StatusPill tone={product.status === "Tersedia" ? "good" : product.status === "Kritis" ? "danger" : "warn"}>{product.status}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}
+          {loading && <div className="empty-state"><LoaderCircle className="spin" size={27} /><strong>Memuat produk...</strong></div>}
+          {!loading && loadError && <div className="empty-state"><CloudOff size={27} /><strong>{loadError}</strong><button className="button secondary compact" onClick={loadProducts}>Coba lagi</button></div>}
+          {!loading && !loadError && filtered.length === 0 && <div className="empty-state"><Package size={30} /><strong>{query ? "Produk tidak ditemukan" : "Belum ada produk"}</strong><span>{query ? "Coba gunakan nama atau kode yang berbeda." : "Tambahkan produk pertama untuk mulai mengelola stok."}</span>{!query && <button className="button primary compact" onClick={openCreate}><Plus size={16}/> Tambah produk</button>}</div>}
         </div>
-        <div className="table-footer"><span>Menampilkan {filtered.length} dari 486 produk</span><div><button disabled><ChevronDown size={16} /></button><b>1</b><button>2</button><button>3</button><button><ChevronRight size={16} /></button></div></div>
+        <div className="table-footer"><span>Menampilkan {filtered.length} dari {liveProducts.length} produk</span><div><button disabled><ChevronDown size={16} /></button><b>1</b><button disabled><ChevronRight size={16} /></button></div></div>
       </section>
+      {createOpen && <div className="modal-scrim" role="presentation" onMouseDown={() => !saving && setCreateOpen(false)}><form className="product-modal" onSubmit={createProduct} onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3>Tambah produk</h3><p>Produk akan langsung tersimpan di Supabase.</p></div><button type="button" className="icon-button" onClick={() => setCreateOpen(false)}><X size={18}/></button></div><div className="product-form-grid"><label className="span-two">Nama produk<input value={form.name} onChange={(event) => setForm({...form, name: event.target.value})} placeholder="Contoh: Minyakita 1 Liter" required /></label><label>Kode produk<input value={form.code} onChange={(event) => setForm({...form, code: event.target.value})} placeholder="PRD-0001" required /></label><label>Cabang awal<select value={form.branchId} onChange={(event) => setForm({...form, branchId: event.target.value})} required>{lookups.branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><label>Kategori<select value={form.categoryId} onChange={(event) => setForm({...form, categoryId: event.target.value})}>{lookups.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Satuan dasar<select value={form.unitId} onChange={(event) => setForm({...form, unitId: event.target.value})} required>{lookups.units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label><label>Harga jual<input type="number" min="0" value={form.sellingPrice} onChange={(event) => setForm({...form, sellingPrice: event.target.value})} placeholder="0" required /></label><label>Stok awal<input type="number" step="0.001" value={form.initialStock} onChange={(event) => setForm({...form, initialStock: event.target.value})} /></label><label>Stok minimum<input type="number" min="0" step="0.001" value={form.minimumStock} onChange={(event) => setForm({...form, minimumStock: event.target.value})} /></label></div>{formError && <div className="login-message error">{formError}</div>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setCreateOpen(false)}>Batal</button><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan produk"}</button></div></form></div>}
     </div>
   );
 }
 
 function InventoryView() {
   const [inventoryTab, setInventoryTab] = useState("Persediaan");
-  const [adjusting, setAdjusting] = useState<string | null>(null);
+  const [adjusting, setAdjusting] = useState<{ id: string; name: string; branchId: string } | null>(null);
+  const [rows, setRows] = useState<Array<{ id: string; name: string; stock: number; minimum: number; unit: string; branchId: string }>>([]);
+  const [branchName, setBranchName] = useState("Cabang");
+  const [loading, setLoading] = useState(true);
+  const [adjustForm, setAdjustForm] = useState({ delta: "1", movementType: "adjustment", notes: "" });
+  const [adjustError, setAdjustError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const loadInventory = async () => {
+    setLoading(true);
+    const { data: branches } = await supabase.from("branches").select("id,name").eq("is_active", true).order("created_at").limit(1);
+    const branch = branches?.[0] as { id: string; name: string } | undefined;
+    if (!branch) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+    setBranchName(branch.name);
+    const { data } = await supabase
+      .from("products")
+      .select("id,name,minimum_stock,units!products_base_unit_id_fkey(name),branch_products!inner(branch_id,stock_base_qty)")
+      .eq("branch_products.branch_id", branch.id)
+      .order("name");
+    const mapped = ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
+      const unit = row.units as { name?: string } | null;
+      const branchStocks = (row.branch_products as Array<{ stock_base_qty: number }> | null) ?? [];
+      return { id: String(row.id), name: String(row.name), stock: Number(branchStocks[0]?.stock_base_qty ?? 0), minimum: Number(row.minimum_stock ?? 0), unit: unit?.name ?? "unit", branchId: branch.id };
+    });
+    setRows(mapped);
+    setLoading(false);
+  };
+
+  useEffect(() => { void loadInventory(); }, []);
+
+  const saveAdjustment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!adjusting) return;
+    setSaving(true);
+    setAdjustError("");
+    const { error } = await supabase.rpc("admin_adjust_stock", {
+      p_branch_id: adjusting.branchId,
+      p_product_id: adjusting.id,
+      p_quantity_delta: Number(adjustForm.delta),
+      p_movement_type: adjustForm.movementType,
+      p_notes: adjustForm.notes || null,
+    });
+    if (error) setAdjustError(error.message);
+    else {
+      setAdjusting(null);
+      setAdjustForm({ delta: "1", movementType: "adjustment", notes: "" });
+      await loadInventory();
+    }
+    setSaving(false);
+  };
+
+  const lowStockCount = rows.filter((row) => row.stock <= row.minimum).length;
   return (
     <div className="view-stack">
       <div className="module-tabs">{["Persediaan", "Pesanan pembelian", "Penerimaan", "Transfer", "Stock opname"].map((tab) => <button key={tab} className={inventoryTab === tab ? "active" : ""} onClick={() => setInventoryTab(tab)}>{tab}</button>)}</div>
-      <div className="action-strip align-end"><p className="helper-copy">Cabang Antapani · Stok terakhir sinkron pukul 10:51</p><button className="button secondary"><History size={17} /> Riwayat penyesuaian</button><button className="button primary"><Truck size={18} /> Terima barang</button></div>
+      <div className="action-strip align-end"><p className="helper-copy">Cabang {branchName} · Data langsung dari Supabase</p><button className="button secondary"><History size={17} /> Riwayat penyesuaian</button><button className="button primary"><Truck size={18} /> Terima barang</button></div>
       <section className="workflow-strip"><div><span className="step done"><Check size={14}/></span><p><strong>Pesanan dibuat</strong><small>PO-0826-018 · kemarin</small></p></div><ChevronRight size={16}/><div><span className="step current">2</span><p><strong>Dalam pengiriman</strong><small>Supplier Sumber Makmur</small></p></div><ChevronRight size={16}/><div><span className="step">3</span><p><strong>Menunggu penerimaan</strong><small>Estimasi hari ini</small></p></div><button className="button secondary compact">Buka pesanan</button></section>
       <section className="surface data-surface">
-        <div className="surface-heading inventory-title"><div><h3>Persediaan outlet</h3><p className="heading-note">8 produk berada di bawah batas minimum</p></div><div className="search-field small"><Search size={17} /><input placeholder="Cari produk" /></div></div>
+        <div className="surface-heading inventory-title"><div><h3>Persediaan outlet</h3><p className="heading-note">{lowStockCount} produk berada di bawah batas minimum</p></div><div className="search-field small"><Search size={17} /><input placeholder="Cari produk" /></div></div>
         <div className="data-table stock-table">
           <div className="table-head"><span>Produk</span><span>Stok sekarang</span><span>Minimum</span><span>Penjualan 7 hari</span><span>Estimasi habis</span><span>Tindakan</span></div>
-          {[
-            ["Telur Ayam Negeri", "7 kg", "12 kg", "34 kg", "Besok", "Kritis"],
-            ["Kopi Kapal Api 65g", "23 sachet", "40 sachet", "116 sachet", "2 hari", "Menipis"],
-            ["Rokok Surya 12", "96 bungkus", "120 bungkus", "284 bungkus", "3 hari", "Menipis"],
-            ["Susu Kental Manis", "31 sachet", "36 sachet", "62 sachet", "4 hari", "Menipis"],
-          ].map((row) => <div className="table-row" key={row[0]}><span className="product-cell"><strong>{row[0]}</strong></span><span><strong>{row[1]}</strong></span><span>{row[2]}</span><span>{row[3]}</span><span><StatusPill tone={row[5] === "Kritis" ? "danger" : "warn"}>{row[4]}</StatusPill></span><button className="text-button" onClick={() => setAdjusting(row[0])}>Sesuaikan stok</button></div>)}
+          {rows.map((row) => <div className="table-row" key={row.id}><span className="product-cell"><strong>{row.name}</strong></span><span><strong>{new Intl.NumberFormat("id-ID", { maximumFractionDigits: 3 }).format(row.stock)} {row.unit}</strong></span><span>{new Intl.NumberFormat("id-ID", { maximumFractionDigits: 3 }).format(row.minimum)} {row.unit}</span><span>Belum ada transaksi</span><span><StatusPill tone={row.stock <= 0 ? "danger" : row.stock <= row.minimum ? "warn" : "good"}>{row.stock <= 0 ? "Habis" : row.stock <= row.minimum ? "Perlu restok" : "Aman"}</StatusPill></span><button className="text-button" onClick={() => setAdjusting({ id: row.id, name: row.name, branchId: row.branchId })}>Sesuaikan stok</button></div>)}
+          {loading && <div className="empty-state"><LoaderCircle className="spin" size={26}/><strong>Memuat persediaan...</strong></div>}
+          {!loading && rows.length === 0 && <div className="empty-state"><Boxes size={28}/><strong>Belum ada persediaan</strong><span>Tambahkan produk terlebih dahulu dari menu Produk.</span></div>}
         </div>
       </section>
-      {adjusting && <div className="modal-scrim" role="presentation" onMouseDown={() => setAdjusting(null)}><section className="stock-modal" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title" onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3 id="stock-modal-title">Sesuaikan stok</h3><p>{adjusting} · Cabang Antapani</p></div><button className="icon-button" onClick={() => setAdjusting(null)}><X size={18}/></button></div><label>Alasan penyesuaian<select defaultValue="received"><option value="received">Stok diterima</option><option value="count">Hasil hitung ulang</option><option value="damaged">Rusak / hilang</option><option value="return">Retur pelanggan</option></select></label><div className="stock-form-row"><label>Jumlah<input type="number" defaultValue="1" /></label><label>Satuan<select defaultValue="base"><option value="base">Satuan dasar</option><option value="box">Dus</option><option value="pack">Pak</option></select></label></div><label>Catatan<textarea placeholder="Tambahkan catatan untuk riwayat stok" /></label><div className="modal-actions"><button className="button secondary" onClick={() => setAdjusting(null)}>Batal</button><button className="button primary" onClick={() => setAdjusting(null)}>Simpan penyesuaian</button></div></section></div>}
+      {adjusting && <div className="modal-scrim" role="presentation" onMouseDown={() => !saving && setAdjusting(null)}><form className="stock-modal" role="dialog" aria-modal="true" aria-labelledby="stock-modal-title" onSubmit={saveAdjustment} onMouseDown={(event) => event.stopPropagation()}><div className="modal-head"><div><h3 id="stock-modal-title">Sesuaikan stok</h3><p>{adjusting.name} · Cabang {branchName}</p></div><button type="button" className="icon-button" onClick={() => setAdjusting(null)}><X size={18}/></button></div><label>Alasan penyesuaian<select value={adjustForm.movementType} onChange={(event) => setAdjustForm({...adjustForm, movementType: event.target.value})}><option value="purchase">Stok diterima / pembelian</option><option value="adjustment">Hasil hitung ulang</option><option value="damaged">Barang rusak / hilang</option><option value="sale_return">Retur pelanggan</option><option value="purchase_return">Retur ke supplier</option></select></label><label>Perubahan jumlah<input type="number" step="0.001" value={adjustForm.delta} onChange={(event) => setAdjustForm({...adjustForm, delta: event.target.value})} required /><small>Gunakan angka negatif untuk mengurangi stok, misalnya −2.</small></label><label>Catatan<textarea value={adjustForm.notes} onChange={(event) => setAdjustForm({...adjustForm, notes: event.target.value})} placeholder="Tambahkan catatan untuk riwayat stok" /></label>{adjustError && <div className="login-message error">{adjustError}</div>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setAdjusting(null)}>Batal</button><button className="button primary" disabled={saving}>{saving ? <><LoaderCircle className="spin" size={16}/> Menyimpan...</> : "Simpan penyesuaian"}</button></div></form></div>}
     </div>
   );
 }
@@ -363,12 +657,37 @@ function ShiftsView() {
 }
 
 function BranchesView() {
-  return <div className="view-stack"><div className="action-strip align-end"><p className="helper-copy">3 cabang aktif · Data diperbarui pukul 10:51 WIB</p><button className="button primary"><Plus size={18} /> Tambah cabang</button></div><section className="branch-cards">{[["Antapani", "Jl. Terusan Jakarta No. 88", "Rp8.462.500", "142", "486", "12,4%"], ["Cicaheum", "Jl. A.H. Nasution No. 42", "Rp7.184.000", "118", "452", "6,8%"], ["Ujung Berung", "Jl. Raya Ujung Berung No. 19", "Rp5.921.500", "91", "438", "−2,1%"]].map((branch, i) => <article className="branch-card" key={branch[0]}><div className="branch-card-head"><span className={`branch-symbol b${i}`}><Store size={20} /></span><button className="icon-button"><MoreHorizontal size={18} /></button></div><h3>{branch[0]}</h3><p>{branch[1]}</p><div className="branch-kpi"><span><small>Omzet hari ini</small><strong>{branch[2]}</strong></span><StatusPill tone={branch[5].startsWith("−") ? "danger" : "good"}>{branch[5]}</StatusPill></div><div className="branch-stats"><span><strong>{branch[3]}</strong><small>Transaksi</small></span><span><strong>{branch[4]}</strong><small>Produk aktif</small></span><span><strong>{i === 0 ? "2" : "1"}</strong><small>Kasir aktif</small></span></div><button className="button secondary full">Buka cabang <ChevronRight size={16} /></button></article>)}</section></div>;
+  const [branches, setBranches] = useState<Array<{ id: string; name: string; code: string; address: string | null; is_active: boolean }>>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("branches").select("id,name,code,address,is_active").order("created_at").then(({ data }) => {
+      setBranches((data ?? []) as Array<{ id: string; name: string; code: string; address: string | null; is_active: boolean }>);
+      setLoading(false);
+    });
+  }, []);
+  return <div className="view-stack"><div className="action-strip align-end"><p className="helper-copy">{branches.length} cabang tersimpan di Supabase</p><button className="button primary"><Plus size={18} /> Tambah cabang</button></div>{loading ? <section className="surface empty-state"><LoaderCircle className="spin" size={26}/><strong>Memuat cabang...</strong></section> : <section className="branch-cards">{branches.map((branch, i) => <article className="branch-card" key={branch.id}><div className="branch-card-head"><span className={`branch-symbol b${i}`}><Store size={20} /></span><StatusPill tone={branch.is_active ? "good" : "neutral"}>{branch.is_active ? "Aktif" : "Nonaktif"}</StatusPill></div><h3>{branch.name}</h3><p>{branch.address || "Alamat belum diatur"}</p><div className="branch-kpi"><span><small>Kode cabang</small><strong>{branch.code}</strong></span></div><div className="branch-stats"><span><strong>0</strong><small>Transaksi hari ini</small></span><span><strong>0</strong><small>Produk aktif</small></span><span><strong>0</strong><small>Kasir aktif</small></span></div><button className="button secondary full">Kelola cabang <ChevronRight size={16} /></button></article>)}</section>}</div>;
 }
 
 function TeamView() {
-  const [approved, setApproved] = useState(false);
-  return <div className="view-stack"><section className={`approval-banner ${approved ? "approved" : ""}`}><span className="notice-symbol user"><UserCheck size={20} /></span><div><strong>{approved ? "Akun Rian Saputra sudah disetujui" : "1 pendaftaran menunggu persetujuan"}</strong><p>{approved ? "Rian kini dapat masuk sebagai kasir Cabang Antapani." : "Rian Saputra mendaftar sebagai kasir Cabang Antapani 24 menit lalu."}</p></div>{!approved && <><button className="button light">Lihat data</button><button className="button primary" onClick={() => setApproved(true)}><Check size={17} /> Setujui</button></>}</section><section className="surface data-surface"><div className="table-toolbar"><div className="search-field"><Search size={18} /><input placeholder="Cari nama atau nomor HP pegawai..." /></div><button className="button primary"><Plus size={18} /> Tambah pegawai</button></div><div className="data-table team-table"><div className="table-head"><span>Pegawai</span><span>Peran</span><span>Cabang</span><span>Shift terakhir</span><span>Status</span><span /></div>{[["Siti Rahma", "0812 4421 8810", "Kasir", "Antapani", "Hari ini, 07:02", "Sedang bertugas"], ["Dedi Irawan", "0857 1930 2246", "Kasir", "Antapani", "Hari ini, 07:18", "Sedang bertugas"], ["Nina Marlina", "0813 7751 9028", "Admin cabang", "Cicaheum", "Kemarin, 20:42", "Aktif"], ["Wawan Setiawan", "0821 6634 1198", "Kasir", "Ujung Berung", "Kemarin, 21:01", "Aktif"]].map((row, i) => <div className="table-row" key={row[0]}><span className="person-cell"><i className={`avatar ${i === 1 ? "blue-avatar" : ""}`}>{row[0].split(" ").map(n => n[0]).join("").slice(0,2)}</i><span><strong>{row[0]}</strong><small>{row[1]}</small></span></span><span>{row[2]}</span><span>{row[3]}</span><span>{row[4]}</span><span><StatusPill tone={row[5] === "Sedang bertugas" ? "good" : "neutral"}>{row[5]}</StatusPill></span><button className="icon-button"><MoreHorizontal size={18} /></button></div>)}</div></section></div>;
+  const [profiles, setProfiles] = useState<Array<{ id: string; full_name: string; phone: string | null; role: string; status: string; created_at: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
+  const loadProfiles = async () => {
+    const { data } = await supabase.from("profiles").select("id,full_name,phone,role,status,created_at").order("created_at");
+    setProfiles((data ?? []) as Array<{ id: string; full_name: string; phone: string | null; role: string; status: string; created_at: string }>);
+    setLoading(false);
+  };
+  useEffect(() => { void loadProfiles(); }, []);
+  const approve = async (userId: string) => {
+    setActionError("");
+    const [{ data: authData }, { data: branches }] = await Promise.all([supabase.auth.getUser(), supabase.from("branches").select("id").eq("is_active", true).order("created_at").limit(1)]);
+    const { error } = await supabase.from("profiles").update({ status: "active", role: "cashier", approved_by: authData.user?.id, approved_at: new Date().toISOString() }).eq("id", userId);
+    if (!error && branches?.[0]?.id) await supabase.from("branch_members").upsert({ branch_id: branches[0].id, user_id: userId, is_default: true });
+    if (error) setActionError(error.message);
+    else await loadProfiles();
+  };
+  const pending = profiles.filter((profile) => profile.status === "pending");
+  return <div className="view-stack">{pending.length > 0 && <section className="approval-banner"><span className="notice-symbol user"><UserCheck size={20} /></span><div><strong>{pending.length} pendaftaran menunggu persetujuan</strong><p>Akun yang disetujui akan menjadi kasir Cabang Antapani.</p></div><button className="button primary" onClick={() => approve(pending[0].id)}><Check size={17} /> Setujui {pending[0].full_name}</button></section>}{actionError && <div className="login-message error">{actionError}</div>}<section className="surface data-surface"><div className="table-toolbar"><div className="search-field"><Search size={18} /><input placeholder="Cari nama atau nomor HP pegawai..." /></div><span className="helper-copy">Pegawai mendaftar dari halaman login</span></div><div className="data-table team-table"><div className="table-head"><span>Pegawai</span><span>Peran</span><span>Cabang</span><span>Terdaftar</span><span>Status</span><span /></div>{profiles.map((profile, i) => <div className="table-row" key={profile.id}><span className="person-cell"><i className={`avatar ${i === 1 ? "blue-avatar" : ""}`}>{profile.full_name.split(" ").map((name) => name[0]).join("").slice(0,2)}</i><span><strong>{profile.full_name}</strong><small>{profile.phone || "Nomor HP belum diisi"}</small></span></span><span>{profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : "Kasir"}</span><span>{profile.status === "active" ? "Antapani" : "Belum ditugaskan"}</span><span>{new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(new Date(profile.created_at))}</span><span><StatusPill tone={profile.status === "active" ? "good" : profile.status === "pending" ? "warn" : "neutral"}>{profile.status === "active" ? "Aktif" : profile.status === "pending" ? "Menunggu" : profile.status}</StatusPill></span>{profile.status === "pending" ? <button className="text-button" onClick={() => approve(profile.id)}>Setujui</button> : <button className="icon-button"><MoreHorizontal size={18} /></button>}</div>)}{loading && <div className="empty-state"><LoaderCircle className="spin" size={26}/><strong>Memuat pegawai...</strong></div>}</div></section></div>;
 }
 
 function ReportsView() {
@@ -403,9 +722,55 @@ export default function Home() {
   const [view, setView] = useState<ViewId>("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<AppProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) {
+        setSession(data.session);
+        if (!data.session) setAuthLoading(false);
+      }
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      if (!nextSession) {
+        setProfile(null);
+        setAuthLoading(false);
+      }
+    });
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user.id) return;
+    setAuthLoading(true);
+    supabase.from("profiles").select("id, full_name, role, status, organization_id").eq("id", session.user.id).single()
+      .then(({ data, error }) => {
+        if (!error && data) setProfile(data as AppProfile);
+        setAuthLoading(false);
+      });
+  }, [session?.user.id]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+    setView("dashboard");
+  };
+
+  if (authLoading) return <main className="app-loading"><BrandMark /><LoaderCircle className="spin" size={22}/><span>Memuat pusat operasional...</span></main>;
+  if (!session) return <LoginScreen />;
+  if (!profile) return <main className="account-state"><BrandMark /><h1>Profil belum tersedia</h1><p>Silakan keluar lalu masuk kembali. Jika masalah berlanjut, periksa data profil di Supabase.</p><button className="button secondary" onClick={logout}>Keluar</button></main>;
+  if (profile.status !== "active") return <AccountState profile={profile} onLogout={logout} />;
+
   return (
     <main className="admin-shell">
-      <Sidebar current={view} onChange={setView} open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <Sidebar current={view} onChange={setView} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={logout} />
       <section className="workspace">
         <Topbar current={view} onMenu={() => setMenuOpen(true)} onNotify={() => setNotificationsOpen((open) => !open)} notificationsOpen={notificationsOpen} />
         <NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
