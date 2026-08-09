@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Sora } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,17 +26,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
 
   return {
-    title: "Pusat Operasional — Toko Agung Lestari",
-    description: "Dashboard admin untuk mengelola cabang, stok, transaksi, shift, pegawai, dan laporan Toko Agung Lestari.",
+    title: "Sistem Retail & Grosir — Agung Lestari",
+    description: "POS, member/reseller, stok, rak, stock opname, barcode, invoice, dan laporan Toko Agung Lestari.",
+    manifest: "/manifest.webmanifest",
+    icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
     openGraph: {
-      title: "Agung Lestari — Pusat Operasional Toko",
-      description: "Stok, transaksi, dan cabang dalam satu kendali.",
+      title: "Agung Lestari — Sistem Retail & Grosir",
+      description: "Retail dan grosir dalam satu sumber stok dan transaksi.",
       images: [{ url: `${origin}/og.png`, width: 1200, height: 630, alt: "Pusat Operasional Toko Agung Lestari" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Agung Lestari — Pusat Operasional Toko",
-      description: "Stok, transaksi, dan cabang dalam satu kendali.",
+      title: "Agung Lestari — Sistem Retail & Grosir",
+      description: "Retail dan grosir dalam satu sumber stok dan transaksi.",
       images: [`${origin}/og.png`],
     },
   };
@@ -39,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${sora.variable} ${plexMono.variable}`}>{children}</body>
     </html>
   );
 }

@@ -1,0 +1,13 @@
+{
+  "name": "Agung Lestari Retail & Grosir",
+  "short_name": "Agung Lestari",
+  "description": "POS, stok, reseller, rak, stock opname, dan laporan dalam satu sistem.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#151b24",
+  "lang": "id-ID",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System — Sistem Retail & Grosir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F5F6F8;
+    --surface:#FFFFFF;
+    --ink:#14181F;
+    --slate:#5B6472;
+    --slate-soft:#8A93A2;
+    --hair:#E3E6EB;
+    --brand:#C6202E;
+    --brand-dark:#9A1B26;
+    --ledger:#151B24;
+    --ledger-soft:#232B37;
+    --success:#1F9254;
+    --success-bg:#E7F5EC;
+    --warning:#B4750E;
+    --warning-bg:#FBF0DD;
+    --danger:#9A1B26;
+    --danger-bg:#FBE9E9;
+    --info:#2A5B8C;
+    --info-bg:#E8F0F9;
+    --radius-s:6px;
+    --radius-m:10px;
+    --radius-l:16px;
+    --font-display:'Sora', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{transition:none !important; animation:none !important;} }
+  body{
+    margin:0;
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--brand); color:#fff;}
+
+  /* ---------- barcode signature motif ---------- */
+  .barcode-rule{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+    height:22px;
+    margin:18px 0 8px;
+  }
+  .barcode-rule span{
+    display:block;
+    width:2px;
+    background:var(--brand);
+    opacity:.85;
+  }
+  .barcode-rule span:nth-child(4n){width:4px; opacity:1;}
+  .barcode-rule span:nth-child(7n){opacity:.35;}
+
+  /* ---------- layout shell ---------- */
+  .top{
+    padding:64px 8vw 40px;
+    max-width:1240px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--brand);
+    font-weight:600;
+  }
+  h1.hero{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:clamp(34px,5vw,56px);
+    line-height:1.05;
+    margin:14px 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .hero-sub{
+    font-size:17px;
+    color:var(--slate);
+    max-width:640px;
+    margin:0 0 6px;
+  }
+  .hero-meta{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    margin-top:28px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--slate-soft);
+  }
+  .hero-meta b{color:var(--ink); font-weight:600;}
+
+  section{
+    max-width:1240px;
+    margin:0 auto;
+    padding:56px 8vw;
+    border-top:1px solid var(--hair);
+  }
+  .sec-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .sec-num{
+    font-family:var(--font-mono);
+    color:var(--slate-soft);
+    font-size:13px;
+  }
+  h2{
+    font-family:var(--font-display);
+    font-size:26px;
+    font-weight:700;
+    margin:2px 0 0;
+    letter-spacing:-.005em;
+  }
+  .sec-desc{
+    color:var(--slate);
+    max-width:560px;
+    font-size:14.5px;
+  }
+
+  /* ---------- color swatches ---------- */
+  .swatch-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+    gap:16px;
+  }
+  .swatch{
+    border:1px solid var(--hair);
+    border-radius:var(--radius-m);
+    overflow:hidden;
+    background:var(--surface);
+  }
+  .swatch-color{height:88px;}
+  .swatch-info{padding:12px 14px 14px;}
+  .swatch-name{font-weight:600; font-size:13.5px;}
+  .swatch-use{color:var(--slate); font-size:12px; margin-top:2px;}
+  .swatch-hex{font-family:var(--font-mono); font-size:11.5px; color:var(--slate-soft); margin-top:8px;}
+
+  /* ---------- typography ---------- */
+  .type-row{
+    display:flex;
+    align-items:baseline;
+    gap:28px;
+    padding:20px 0;
+    border-bottom:1px solid var(--hair);
+    flex-wrap:wrap;
+  }
+  .type-row:last-child{border-bottom:none;}
+  .type-label{
+    width:130px;
+    flex:0 0 130px;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--slate-soft);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  .type-sample{flex:1; min-width:240px;}
+  .t-display{font-family:var(--font-display); font-weight:800; font-size:40px; letter-spacing:-0.01em;}
+  .t-h2{font-family:var(--font-display); font-weight:700; font-size:26px;}
+  .t-h3{font-family:var(--font-display); font-weight:600; font-size:19px;}
+  .t-body{font-family:var(--font-body); font-size:15px; color:var(--ink);}
+  .t-caption{font-family:var(--font-body); font-size:12.5px; color:var(--slate);}
+  .t-mono{font-family:var(--font-mono); font-size:20px; font-variant-numeric:tabular-nums;}
+
+  /* ---------- spacing ---------- */
+  .space-row{display:flex; align-items:center; gap:16px; padding:10px 0;}
+  .space-bar{background:var(--brand); height:14px; border-radius:3px;}
+  .space-label{font-family:var(--font-mono); font-size:12px; color:var(--slate); width:70px;}
+
+  /* ---------- buttons ---------- */
+  .row{display:flex; gap:14px; flex-wrap:wrap; align-items:center;}
+  button, .btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    border-radius:8px;
+    padding:11px 20px;
+    border:1px solid transparent;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible{
+    outline:2px solid var(--info);
+    outline-offset:2px;
+  }
+  .btn-primary{background:var(--brand); color:#fff;}
+  .btn-primary:hover{background:var(--brand-dark); transform:translateY(-1px);}
+  .btn-secondary{background:var(--ledger); color:#fff;}
+  .btn-secondary:hover{background:var(--ledger-soft);}
+  .btn-outline{background:transparent; border-color:var(--hair); color:var(--ink);}
+  .btn-outline:hover{border-color:var(--slate-soft);}
+  .btn-ghost{background:transparent; color:var(--slate);}
+  .btn-ghost:hover{color:var(--ink); background:var(--canvas);}
+  .btn-danger{background:var(--danger); color:#fff;}
+  .btn-danger:hover{background:#7d1620;}
+  .btn-disabled{background:var(--hair); color:var(--slate-soft); cursor:not-allowed;}
+
+  /* ---------- badges ---------- */
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--font-mono);
+    font-size:11.5px; font-weight:500;
+    padding:4px 10px 4px 8px;
+    border-radius:100px;
+  }
+  .badge::before{content:''; width:6px; height:6px; border-radius:50%; background:currentColor;}
+  .badge-success{background:var(--success-bg); color:var(--success);}
+  .badge-warning{background:var(--warning-bg); color:var(--warning);}
+  .badge-danger{background:var(--danger-bg); color:var(--danger);}
+  .badge-info{background:var(--info-bg); color:var(--info);}
+  .badge-role{background:var(--ledger); color:#fff; font-family:var(--font-body); font-weight:600; padding:4px 12px;}
+  .badge-role::before{display:none;}
+
+  /* ---------- form ---------- */
+  .field{display:flex; flex-direction:column; gap:6px; min-width:220px;}
+  .field label{font-size:12px; font-weight:600; color:var(--slate);}
+  .field input, .field select{
+    font-family:var(--font-body);
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--hair);
+    border-radius:8px;
+    background:var(--surface);
+    color:var(--ink);
+  }
+  .field input::placeholder{color:var(--slate-soft);}
+  .search-wrap{position:relative; min-width:260px;}
+  .search-wrap input{width:100%; padding-left:36px;}
+  .search-wrap svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.5;}
+
+  /* ---------- cards ---------- */
+  .card-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
+  .stat-card{
+    background:var(--surface);
+    border:1px solid var(--hair);
+    border-radius:var(--radius-l);
+    padding:20px;
+  }
+  .stat-card .k{font-family:var(--font-mono); font-size:11.5px; color:var(--slate-soft); text-transform:uppercase; letter-spacing:.06em;}
+  .stat-card .v{font-family:var(--font-mono); font-size:28px; font-weight:600; margin-top:8px; font-variant-numeric:tabular-nums;}
+  .stat-card .d{font-size:12.5px; color:var(--success); margin-top:6px;}
+
+  /* ---------- table ---------- */
+  table{width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--hair); border-radius:var(--radius-m); overflow:hidden;}
+  thead th{
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--slate-soft);
+    background:var(--canvas);
+    padding:12px 16px;
+    border-bottom:1px solid var(--hair);
+  }
+  tbody td{padding:13px 16px; border-bottom:1px solid var(--hair); font-size:13.5px;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right;}
+
+  /* ---------- mockups ---------- */
+  .mock-frame{
+    border:1px solid var(--hair);
+    border-radius:var(--radius-l);
+    overflow:hidden;
+    background:var(--surface);
+    box-shadow:0 20px 40px -24px rgba(20,24,31,.25);
+  }
+  .mock-shell{display:grid; grid-template-columns:200px 1fr;}
+  @media (max-width:720px){.mock-shell{grid-template-columns:1fr;}}
+  .mock-sidebar{
+    background:var(--ledger);
+    color:#fff;
+    padding:20px 16px;
+  }
+  .mock-logo{display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-weight:700; font-size:14px; margin-bottom:22px;}
+  .mock-logo .dot{width:8px; height:8px; background:var(--brand); border-radius:50%;}
+  .mock-nav-item{
+    font-size:12.5px; padding:9px 10px; border-radius:6px; color:#B7BEC9; margin-bottom:2px;
+  }
+  .mock-nav-item.active{background:rgba(255,255,255,.08); color:#fff; font-weight:600;}
+  .mock-main{padding:22px 24px;}
+  .mock-topline{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;}
+  .mock-title{font-family:var(--font-display); font-weight:700; font-size:17px;}
+
+  /* POS mockup specific */
+  .pos-shell{display:grid; grid-template-columns:1fr 260px;}
+  @media (max-width:720px){.pos-shell{grid-template-columns:1fr;}}
+  .pos-grid{padding:20px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .pos-item{border:1px solid var(--hair); border-radius:10px; padding:12px 10px; font-size:12px;}
+  .pos-item .nm{font-weight:600; margin-bottom:6px;}
+  .pos-item .pr{font-family:var(--font-mono); color:var(--brand); font-size:13px;}
+  .pos-ticket{
+    background:var(--ledger);
+    color:#fff;
+    padding:20px 18px;
+    position:relative;
+  }
+  .pos-ticket::before{
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:1px;
+    background-image:linear-gradient(var(--canvas) 50%, transparent 0%);
+    background-size:1px 10px;
+  }
+  .pos-ticket h4{font-family:var(--font-display); font-size:13px; margin:0 0 14px; color:#B7BEC9; font-weight:600; text-transform:uppercase; letter-spacing:.06em;}
+  .pos-line{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:8px; color:#D7DBE2;}
+  .pos-line b{color:#fff; font-weight:500;}
+  .pos-total{
+    margin-top:16px; padding-top:14px; border-top:1px dashed rgba(255,255,255,.25);
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .pos-total .lbl{font-size:12px; color:#B7BEC9;}
+  .pos-total .amt{font-family:var(--font-mono); font-size:22px; font-weight:600;}
+  .pos-pay{width:100%; margin-top:16px; justify-content:center;}
+
+  /* icon strip */
+  .icon-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:14px;}
+  .icon-card{
+    border:1px solid var(--hair); border-radius:var(--radius-m); background:var(--surface);
+    padding:18px 10px; text-align:center; font-size:11.5px; color:var(--slate);
+  }
+  .icon-card svg{margin-bottom:10px;}
+
+  footer{
+    max-width:1240px; margin:0 auto; padding:40px 8vw 70px;
+    color:var(--slate-soft); font-size:12.5px; font-family:var(--font-mono);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="top">
+    <div class="eyebrow">ARS · Sistem Retail &amp; Grosir</div>
+    <h1 class="hero">Design System</h1>
+    <p class="hero-sub">Bahasa visual untuk Website (POS &amp; panel admin) dan Aplikasi Mobile. Dibuat untuk terasa cepat, jelas, dan bisa dipercaya di lantai kasir maupun ruang gudang.</p>
+    <div class="barcode-rule" id="barcode-hero"></div>
+    <div class="hero-meta">
+      <span><b>Versi</b> 1.0</span>
+      <span><b>Platform</b> Web &amp; Mobile (Android)</span>
+      <span><b>Update</b> 9 Agustus 2026</span>
+    </div>
+  </div>
+
+  <!-- COLOR -->
+  <section id="color">
+    <div class="sec-head">
+      <div>
+        <div class="sec-num">01</div>
+        <h2>Warna</h2>
+      </div>
+      <p class="sec-desc">Kanvas netral dan sepasang warna struktural jadi dasar, merah jadi satu-satunya warna yang menarik perhatian — dipakai konsisten untuk aksi utama dan mode kasir.</p>
+    </div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--canvas)"></div>
+        <div class="swatch-info"><div class="swatch-name">Canvas</div><div class="swatch-use">Latar aplikasi</div><div class="swatch-hex">#F5F6F8</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--surface); border-bottom:1px solid var(--hair)"></div>
+        <div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-use">Kartu &amp; panel</div><div class="swatch-hex">#FFFFFF</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--ink)"></div>
+        <div class="swatch-info"><div class="swatch-name">Ink</div><div class="swatch-use">Teks utama</div><div class="swatch-hex">#14181F</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--slate)"></div>
+        <div class="swatch-info"><div class="swatch-name">Slate</div><div class="swatch-use">Teks sekunder, label</div><div class="swatch-hex">#5B6472</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--brand)"></div>
+        <div class="swatch-info"><div class="swatch-name">Signal Red</div><div class="swatch-use">Aksi utama, kasir</div><div class="swatch-hex">#C6202E</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--ledger)"></div>
+        <div class="swatch-info"><div class="swatch-name">Deep Ledger</div><div class="swatch-use">Sidebar, struk/nota</div><div class="swatch-hex">#151B24</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--success)"></div>
+        <div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-use">Stok aman, transaksi sukses</div><div class="swatch-hex">#1F9254</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--warning)"></div>
+        <div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-use">Stok menipis</div><div class="swatch-hex">#B4750E</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:var(--danger)"></div>
+        <div class="swatch-info"><div class="swatch-name">Danger</div><div class="swatch-use">Stok habis, error</div><div class="swatch-hex">#9A1B26</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section id="type">
+    <div class="sec-head">
+      <div><div class="sec-num">02</div><h2>Tipografi</h2></div>
+      <p class="sec-desc">Sora untuk judul, Inter sebagai kuda beban seluruh antarmuka, IBM Plex Mono khusus untuk angka — harga, SKU, dan barcode selalu rapi sejajar.</p>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Display / Sora 800</div>
+      <div class="type-sample"><div class="t-display">Laporan Penjualan</div></div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Heading / Sora 700</div>
+      <div class="type-sample"><div class="t-h2">Stok Produk Menipis</div></div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Subhead / Sora 600</div>
+      <div class="type-sample"><div class="t-h3">Ringkasan hari ini</div></div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Body / Inter 400–600</div>
+      <div class="type-sample"><div class="t-body">Customer terdaftar sebagai reseller akan otomatis mendapat harga reseller, meskipun hanya membeli satu unit.</div></div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Caption / Inter 400</div>
+      <div class="type-sample"><div class="t-caption">Terakhir diperbarui 2 menit lalu · oleh Kasir 02</div></div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Data / Plex Mono</div>
+      <div class="type-sample"><div class="t-mono">Rp 1.250.000 · SKU-00482</div></div>
+    </div>
+  </section>
+
+  <!-- SPACING -->
+  <section id="spacing">
+    <div class="sec-head">
+      <div><div class="sec-num">03</div><h2>Spacing</h2></div>
+      <p class="sec-desc">Skala 4px, terpakai konsisten di padding, gap, dan grid.</p>
+    </div>
+    <div>
+      <div class="space-row"><div class="space-label">4</div><div class="space-bar" style="width:4px"></div></div>
+      <div class="space-row"><div class="space-label">8</div><div class="space-bar" style="width:8px"></div></div>
+      <div class="space-row"><div class="space-label">12</div><div class="space-bar" style="width:12px"></div></div>
+      <div class="space-row"><div class="space-label">16</div><div class="space-bar" style="width:16px"></div></div>
+      <div class="space-row"><div class="space-label">24</div><div class="space-bar" style="width:24px"></div></div>
+      <div class="space-row"><div class="space-label">32</div><div class="space-bar" style="width:32px"></div></div>
+      <div class="space-row"><div class="space-label">48</div><div class="space-bar" style="width:48px"></div></div>
+      <div class="space-row"><div class="space-label">64</div><div class="space-bar" style="width:64px"></div></div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section id="buttons">
+    <div class="sec-head">
+      <div><div class="sec-num">04</div><h2>Tombol</h2></div>
+      <p class="sec-desc">Merah dipakai secara sengaja hanya untuk satu aksi utama per layar, supaya kasir tidak pernah ragu tombol mana yang harus ditekan.</p>
+    </div>
+    <div class="row">
+      <button class="btn-primary">Bayar Sekarang</button>
+      <button class="btn-secondary">Simpan Draft</button>
+      <button class="btn-outline">Batalkan</button>
+      <button class="btn-ghost">Lihat Detail</button>
+      <button class="btn-danger">Hapus Produk</button>
+      <button class="btn-disabled" disabled>Stok Habis</button>
+    </div>
+  </section>
+
+  <!-- BADGES -->
+  <section id="badges">
+    <div class="sec-head">
+      <div><div class="sec-num">05</div><h2>Status &amp; Role</h2></div>
+      <p class="sec-desc">Label status memakai warna semantik yang sama di seluruh modul — dashboard, produk, hingga stock opname.</p>
+    </div>
+    <div class="row" style="margin-bottom:18px;">
+      <span class="badge badge-success">Stok Aman</span>
+      <span class="badge badge-warning">Stok Menipis</span>
+      <span class="badge badge-danger">Stok Habis</span>
+      <span class="badge badge-info">Menunggu Konfirmasi</span>
+    </div>
+    <div class="row">
+      <span class="badge badge-role">Owner</span>
+      <span class="badge badge-role">Admin</span>
+      <span class="badge badge-role">Kasir</span>
+      <span class="badge badge-role">Gudang</span>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section id="form">
+    <div class="sec-head">
+      <div><div class="sec-num">06</div><h2>Form &amp; Input</h2></div>
+      <p class="sec-desc">Field besar dan berjarak lega — dirancang supaya tetap nyaman disentuh di layar HP saat dipakai sebagai kasir.</p>
+    </div>
+    <div class="row" style="align-items:flex-end;">
+      <div class="search-wrap">
+        <label style="font-size:12px; font-weight:600; color:var(--slate); display:block; margin-bottom:6px;">Cari produk</label>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6472" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Scan barcode atau ketik nama produk">
+      </div>
+      <div class="field">
+        <label>Tipe Customer</label>
+        <select><option>Retail</option><option>Reseller</option></select>
+      </div>
+      <div class="field">
+        <label>Jumlah</label>
+        <input type="text" placeholder="1">
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDS -->
+  <section id="cards">
+    <div class="sec-head">
+      <div><div class="sec-num">07</div><h2>Kartu Statistik</h2></div>
+      <p class="sec-desc">Angka besar selalu pakai Plex Mono, supaya dashboard terasa seperti data, bukan dekorasi.</p>
+    </div>
+    <div class="card-grid">
+      <div class="stat-card"><div class="k">Omzet Hari Ini</div><div class="v">Rp 4,2jt</div><div class="d">↑ 12% dari kemarin</div></div>
+      <div class="stat-card"><div class="k">Transaksi</div><div class="v">38</div><div class="d">↑ 5 transaksi</div></div>
+      <div class="stat-card"><div class="k">Stok Menipis</div><div class="v" style="color:var(--warning)">7 produk</div></div>
+      <div class="stat-card"><div class="k">Customer Reseller</div><div class="v">142</div></div>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section id="table">
+    <div class="sec-head">
+      <div><div class="sec-num">08</div><h2>Tabel Data</h2></div>
+      <p class="sec-desc">Header memakai huruf kecil kapital dan Plex Mono; kolom angka selalu rata kanan agar mudah dibandingkan.</p>
+    </div>
+    <table>
+      <thead>
+        <tr><th>SKU</th><th>Produk</th><th>Kategori</th><th>Stok</th><th style="text-align:right">Harga Retail</th><th style="text-align:right">Harga Reseller</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="num">00482</td><td>Speaker Aktif 12"</td><td>Audio</td><td><span class="badge badge-success">42</span></td><td class="num">Rp 2.150.000</td><td class="num">Rp 1.890.000</td></tr>
+        <tr><td class="num">00511</td><td>Lampu PAR LED RGB</td><td>Lighting</td><td><span class="badge badge-warning">6</span></td><td class="num">Rp 385.000</td><td class="num">Rp 320.000</td></tr>
+        <tr><td class="num">00390</td><td>Kabel XLR 10m</td><td>Aksesoris</td><td><span class="badge badge-danger">0</span></td><td class="num">Rp 145.000</td><td class="num">Rp 120.000</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ICONS -->
+  <section id="icons">
+    <div class="sec-head">
+      <div><div class="sec-num">09</div><h2>Ikon</h2></div>
+      <p class="sec-desc">Line icon 1.5–2px, sudut membulat ringan — netral dan mudah dikenali di layar kecil.</p>
+    </div>
+    <div class="icon-grid">
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>Barcode</div>
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M2 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L21 7H6"/></svg>Kasir</div>
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>Inventory</div>
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Rak</div>
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>Member</div>
+      <div class="icon-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14181F" stroke-width="1.6"><path d="M4 4h16v14H8l-4 4V4Z"/></svg>Laporan</div>
+    </div>
+  </section>
+
+  <!-- MOCKUP: DASHBOARD -->
+  <section id="mock-dash">
+    <div class="sec-head">
+      <div><div class="sec-num">10</div><h2>Contoh Layar — Dashboard</h2></div>
+      <p class="sec-desc">Sidebar gelap dengan motif garis barcode di logo, kanvas terang untuk kartu data.</p>
+    </div>
+    <div class="mock-frame">
+      <div class="mock-shell">
+        <div class="mock-sidebar">
+          <div class="mock-logo"><span class="dot"></span> ARS SISTEM</div>
+          <div class="barcode-rule" style="height:14px; margin:0 0 18px;" id="barcode-side"></div>
+          <div class="mock-nav-item active">Dashboard</div>
+          <div class="mock-nav-item">POS / Kasir</div>
+          <div class="mock-nav-item">Produk</div>
+          <div class="mock-nav-item">Member</div>
+          <div class="mock-nav-item">Inventory</div>
+          <div class="mock-nav-item">Stock Opname</div>
+          <div class="mock-nav-item">Laporan</div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-topline">
+            <div class="mock-title">Ringkasan Hari Ini</div>
+            <span class="badge badge-role">Owner</span>
+          </div>
+          <div class="card-grid">
+            <div class="stat-card"><div class="k">Omzet</div><div class="v">Rp 4,2jt</div></div>
+            <div class="stat-card"><div class="k">Transaksi</div><div class="v">38</div></div>
+            <div class="stat-card"><div class="k">Stok Menipis</div><div class="v" style="color:var(--warning)">7</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOCKUP: POS -->
+  <section id="mock-pos">
+    <div class="sec-head">
+      <div><div class="sec-num">11</div><h2>Contoh Layar — Kasir</h2></div>
+      <p class="sec-desc">Panel struk di kanan bertepi sobek seperti nota asli — total transaksi selalu jadi elemen paling besar di layar.</p>
+    </div>
+    <div class="mock-frame">
+      <div class="pos-shell">
+        <div class="pos-grid">
+          <div class="pos-item"><div class="nm">Speaker Aktif 12"</div><div class="pr">Rp 2.150.000</div></div>
+          <div class="pos-item"><div class="nm">Lampu PAR LED</div><div class="pr">Rp 385.000</div></div>
+          <div class="pos-item"><div class="nm">Kabel XLR 10m</div><div class="pr">Rp 145.000</div></div>
+          <div class="pos-item"><div class="nm">Mixer 4 Channel</div><div class="pr">Rp 1.780.000</div></div>
+          <div class="pos-item"><div class="nm">Mic Wireless</div><div class="pr">Rp 620.000</div></div>
+          <div class="pos-item"><div class="nm">Stand Speaker</div><div class="pr">Rp 275.000</div></div>
+        </div>
+        <div class="pos-ticket">
+          <h4>Struk Transaksi</h4>
+          <div class="pos-line"><span>Speaker Aktif 12"</span><b>Rp 2.150.000</b></div>
+          <div class="pos-line"><span>Kabel XLR 10m ×2</span><b>Rp 290.000</b></div>
+          <div class="pos-line"><span>Customer</span><b>Reseller</b></div>
+          <div class="pos-total"><span class="lbl">Total</span><span class="amt">Rp 2.440.000</span></div>
+          <button class="btn-primary pos-pay">Bayar Sekarang</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Design System — Sistem Retail &amp; Grosir · v1.0</span>
+    <span>Sora / Inter / IBM Plex Mono</span>
+  </footer>
+
+<script>
+  function drawBarcode(id, count){
+    const el = document.getElementById(id);
+    if(!el) return;
+    let html = '';
+    for(let i=0;i<count;i++){
+      const h = 40 + Math.random()*60;
+      html += `<span style="height:${h}%"></span>`;
+    }
+    el.innerHTML = html;
+  }
+  drawBarcode('barcode-hero', 90);
+  drawBarcode('barcode-side', 60);
+</script>
+
+</body>
+</html>
