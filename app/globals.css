@@ -1902,7 +1902,8 @@ h1, h2, h3, h4, .dialog-title, .welcome-band h2, .report-hero h2 {
   min-height: 600px;
   height: calc(100dvh - 188px);
   max-height: 780px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .receipt-items {
   min-height: 112px;
@@ -1963,4 +1964,298 @@ h1, h2, h3, h4, .dialog-title, .welcome-band h2, .report-hero h2 {
 @media (max-width: 420px) {
   .pos-receipt { padding: 16px; border-radius: 12px; }
   .receipt-payment-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-height: 760px) and (min-width: 961px) {
+  .pos-receipt { padding: 15px; scrollbar-width: thin; }
+  .receipt-head { padding-bottom: 10px; }
+  .receipt-field { margin-top: 9px; }
+  .price-mode { margin-top: 7px; }
+  .receipt-items { min-height: 64px; margin-top: 8px; }
+  .empty-receipt { min-height: 64px; gap: 3px; }
+  .empty-receipt svg { width: 22px; height: 22px; }
+  .empty-receipt strong { font-size: 11px; }
+  .receipt-checkout > .receipt-field { margin-top: 7px; }
+  .receipt-total { margin-top: 8px; padding-top: 9px; }
+  .payment-field { margin-top: 8px; }
+  .change-line { padding: 6px 1px; }
+  .pos-pay-button { min-height: 44px; margin-top: 4px; }
+}
+
+/* Collapsible primary navigation. */
+.menu-trigger { display: inline-grid; flex: none; }
+.sidebar { transition: transform .25s ease; }
+
+@media (min-width: 961px) {
+  .admin-shell { transition: grid-template-columns .25s ease; }
+  .admin-shell.sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+  .admin-shell.sidebar-collapsed .sidebar { transform: translateX(-105%); }
+}
+
+/* Minimal two-tone system: charcoal and warm ivory only. */
+:root {
+  --minimal-dark: #1d1e1c;
+  --minimal-light: #f7f5ef;
+  --ink: var(--minimal-dark);
+  --muted: color-mix(in srgb, var(--minimal-dark) 62%, var(--minimal-light));
+  --slate: color-mix(in srgb, var(--minimal-dark) 72%, var(--minimal-light));
+  --slate-soft: color-mix(in srgb, var(--minimal-dark) 48%, var(--minimal-light));
+  --line: color-mix(in srgb, var(--minimal-dark) 14%, var(--minimal-light));
+  --hair: var(--line);
+  --paper: var(--minimal-light);
+  --surface: var(--minimal-light);
+  --canvas: color-mix(in srgb, var(--minimal-dark) 4%, var(--minimal-light));
+  --forest: var(--minimal-dark);
+  --forest-dark: var(--minimal-dark);
+  --mint: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --brand: var(--minimal-dark);
+  --brand-dark: var(--minimal-dark);
+  --ledger: var(--minimal-dark);
+  --ledger-soft: color-mix(in srgb, var(--minimal-light) 12%, var(--minimal-dark));
+  --success: var(--minimal-dark);
+  --success-soft: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --amber: var(--minimal-dark);
+  --amber-soft: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --red: var(--minimal-dark);
+  --red-soft: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --blue: var(--minimal-dark);
+  --blue-soft: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --danger: var(--minimal-dark);
+  --danger-bg: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --info: var(--minimal-dark);
+  --info-bg: color-mix(in srgb, var(--minimal-dark) 8%, var(--minimal-light));
+  --shadow: 0 14px 30px -26px rgb(29 30 28 / 45%);
+}
+
+html, body { background: var(--canvas); }
+body { background-image: none; }
+::selection { color: var(--minimal-light); background: var(--minimal-dark); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline-color: color-mix(in srgb, var(--minimal-dark) 42%, transparent);
+}
+
+.sidebar {
+  color: var(--minimal-light);
+  background: var(--minimal-dark);
+  border-right: 0;
+  box-shadow: none;
+}
+.brand-lockup strong, .user-card strong { color: var(--minimal-light); }
+.brand-lockup span, .user-card span, .user-card svg, .user-card > .logout-button {
+  color: color-mix(in srgb, var(--minimal-light) 62%, var(--minimal-dark));
+}
+.brand-mark, .login-brand .brand-mark {
+  overflow: hidden;
+  color: var(--minimal-dark);
+  background: var(--minimal-light);
+  border: 1px solid var(--minimal-light);
+  border-radius: 4px;
+  box-shadow: none;
+}
+.brand-mark::before { content: none; }
+.brand-mark i { display: none; }
+.nav-caption { color: color-mix(in srgb, var(--minimal-light) 46%, var(--minimal-dark)); }
+.nav-item { color: color-mix(in srgb, var(--minimal-light) 68%, var(--minimal-dark)); border-radius: 5px; }
+.nav-item:hover { color: var(--minimal-light); background: color-mix(in srgb, var(--minimal-light) 8%, transparent); }
+.nav-item.active {
+  color: var(--minimal-dark);
+  background: var(--minimal-light);
+  box-shadow: none;
+}
+.sidebar-foot { border-top-color: color-mix(in srgb, var(--minimal-light) 14%, transparent); }
+.user-card {
+  color: var(--minimal-light);
+  border-color: color-mix(in srgb, var(--minimal-light) 14%, transparent);
+  background: color-mix(in srgb, var(--minimal-light) 6%, transparent);
+}
+.sidebar .icon-button:hover { color: var(--minimal-light); background: color-mix(in srgb, var(--minimal-light) 9%, transparent); }
+
+.topbar {
+  border-bottom-color: var(--line);
+  background: color-mix(in srgb, var(--minimal-light) 94%, transparent);
+  box-shadow: none;
+}
+.page-heading p, .page-heading h1, .branch-picker > svg:first-child { color: var(--minimal-dark); }
+.menu-trigger {
+  color: var(--minimal-dark);
+  border: 1px solid var(--line);
+  background: var(--minimal-light);
+}
+.menu-trigger:hover { color: var(--minimal-light); border-color: var(--minimal-dark); background: var(--minimal-dark); }
+.branch-picker, .notification-button, .search-field, .date-input, .control-value,
+.retail-search, .retail-context-bar {
+  border-color: var(--line);
+  background: var(--minimal-light);
+}
+.notification-button:hover, .notification-button.active { border-color: var(--minimal-dark); background: var(--minimal-light); }
+.notification-button i { color: var(--minimal-light); background: var(--minimal-dark); }
+
+.surface, .metric-card, .branch-card, .shift-card, .orders-list, .order-detail,
+.dashboard-controls, .mini-metrics, .order-summary, .settings-nav,
+.retail-summary-grid article, .workflow-card, .retail-modal, .product-modal,
+.feature-modal, .stock-modal {
+  border-color: var(--line);
+  background: var(--minimal-light);
+  box-shadow: var(--shadow);
+}
+.surface, .metric-card, .branch-card, .shift-card, .order-detail, .orders-list,
+.dashboard-controls, .mini-metrics, .order-summary, .settings-nav { border-radius: 8px; }
+.welcome-band { color: var(--minimal-light); border-color: var(--minimal-dark); background: var(--minimal-dark); }
+.welcome-band h2, .welcome-band span, .welcome-band .section-kicker { color: var(--minimal-light); }
+.section-kicker, .text-action, .text-button, .forgot-button, .auth-switch button { color: var(--minimal-dark); }
+.metric-card.featured, .active-shift { border-top-color: var(--minimal-dark); }
+
+.metric-icon, .metric-icon.amber, .metric-icon.blue, .metric-icon.red,
+.transaction-icon, .notice-symbol, .notice-symbol.order, .notice-symbol.stock, .notice-symbol.user,
+.product-thumb, .product-thumb.p1, .product-thumb.p2, .product-thumb.p3,
+.rank, .rank.first, .branch-symbol, .branch-symbol.b1, .branch-symbol.b2,
+.tool-icon, .avatar, .avatar.warm, .blue-avatar {
+  color: var(--minimal-dark) !important;
+  background: color-mix(in srgb, var(--minimal-dark) 9%, var(--minimal-light)) !important;
+}
+.tool-icon.dark { color: var(--minimal-light) !important; background: var(--minimal-dark) !important; }
+.bar-column > div, .weekly-bars i, .top-products i { background: color-mix(in srgb, var(--minimal-dark) 16%, var(--minimal-light)); }
+.bar-column > div.peak, .weekly-bars i.peak, .top-products i b { background: var(--minimal-dark); }
+.chart-summary span, .positive, .warn-text { color: var(--minimal-dark) !important; }
+.live-dot { background: var(--minimal-dark); box-shadow: 0 0 0 3px color-mix(in srgb, var(--minimal-dark) 10%, var(--minimal-light)); }
+
+.filter-chips button.active, .period-tabs button.active, .segmented button.active {
+  color: var(--minimal-light);
+  background: var(--minimal-dark);
+}
+.saved-views button.active, .module-tabs button.active { color: var(--minimal-dark); border-bottom-color: var(--minimal-dark); }
+.data-table .table-head, .retail-table-head { color: var(--muted); background: var(--canvas); }
+.data-table .table-row:hover, .data-table .table-row.selected, .notification-row:hover,
+.rack-grid button.active, .order-card.selected { background: color-mix(in srgb, var(--minimal-dark) 4%, var(--minimal-light)); }
+
+.button { border-radius: 6px; }
+.button.primary, .danger-button {
+  color: var(--minimal-light) !important;
+  border-color: var(--minimal-dark) !important;
+  background: var(--minimal-dark) !important;
+  box-shadow: none !important;
+}
+.button.primary:hover, .danger-button:hover { opacity: .82; }
+.button.secondary, .button.light {
+  color: var(--minimal-dark);
+  border-color: var(--line);
+  background: var(--minimal-light);
+}
+.button.secondary:hover, .button.light:hover { border-color: var(--minimal-dark); background: var(--minimal-light); }
+.toggle { background: color-mix(in srgb, var(--minimal-dark) 20%, var(--minimal-light)); }
+.toggle.on { background: var(--minimal-dark); }
+.toggle i { background: var(--minimal-light); }
+.report-hero, .pos-receipt, .thermal-receipt { color: var(--minimal-light); background: var(--minimal-dark); }
+
+.status-pill, .status-pill.good, .status-pill.warn, .status-pill.danger, .status-pill.info,
+.inventory-alert, .approval-banner, .approval-banner.approved, .stock-check,
+.reseller-notice, .planogram-note, .bulk-bar, .app-toast, .app-toast.error,
+.login-message.success, .login-message.error {
+  color: var(--minimal-dark);
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--minimal-dark) 7%, var(--minimal-light));
+}
+.inventory-alert > span { color: var(--minimal-dark); background: color-mix(in srgb, var(--minimal-dark) 10%, var(--minimal-light)); }
+.stock-check small, .inventory-alert p, .approval-banner p, .bulk-bar button { color: var(--muted); }
+.workflow-strip .step.done { color: var(--minimal-light); border-color: var(--minimal-dark); background: var(--minimal-dark); }
+.workflow-strip .step.current { color: var(--minimal-dark); border-color: var(--minimal-dark); background: var(--minimal-light); }
+
+.feature-form input, .feature-form select, .feature-form textarea,
+.feature-form-grid input, .feature-form-grid select, .feature-form-grid textarea,
+.settings-form-grid input, .settings-form-grid select, .settings-form-grid textarea,
+.settings-inline-field input, .login-form input, .product-modal input, .product-modal select,
+.retail-modal input, .retail-modal select, .retail-modal textarea,
+.rack-create-form input, .placement-controls input, .placement-controls select,
+.label-print-controls select, .label-print-controls input, .document-toolbar select {
+  color: var(--minimal-dark);
+  border-color: var(--line);
+  background: var(--minimal-light);
+}
+.feature-form input:focus, .feature-form select:focus, .feature-form textarea:focus,
+.feature-form-grid input:focus, .feature-form-grid select:focus, .feature-form-grid textarea:focus,
+.settings-form-grid input:focus, .settings-form-grid select:focus, .settings-form-grid textarea:focus,
+.login-form input:focus, .product-modal input:focus, .product-modal select:focus,
+.retail-search:focus-within, .search-field:focus-within, .date-input:focus-within {
+  border-color: var(--minimal-dark);
+  outline-color: color-mix(in srgb, var(--minimal-dark) 12%, transparent);
+  box-shadow: none;
+}
+
+.login-shell { background: var(--minimal-light); }
+.login-brand-panel { color: var(--minimal-light); background: var(--minimal-dark); }
+.login-brand small, .login-copy p, .login-copy > span, .login-barcode {
+  color: color-mix(in srgb, var(--minimal-light) 68%, var(--minimal-dark));
+}
+.login-form > div:first-child p { color: var(--minimal-dark); }
+
+/* Shared resilience and accessibility states. */
+.skip-link {
+  position: fixed;
+  z-index: 1000;
+  top: 10px;
+  left: 10px;
+  padding: 9px 12px;
+  color: var(--minimal-light);
+  background: var(--minimal-dark);
+  border-radius: 5px;
+  transform: translateY(-160%);
+  transition: transform .18s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+.feature-gate {
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: left;
+}
+.feature-gate > div { display: flex; flex-direction: column; gap: 4px; }
+.feature-gate strong { font-size: 15px; }
+.feature-gate span { color: var(--muted); font-size: 12px; }
+.toast-dismiss {
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: inherit;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+.toast-dismiss:hover { background: color-mix(in srgb, var(--minimal-dark) 8%, transparent); }
+.notification-state {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 15px 18px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.notification-state .text-button { margin-left: auto; }
+.feature-inline-state {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.feature-inline-state > span {
+  flex: 1;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+button:disabled, select:disabled, input:disabled { cursor: not-allowed; opacity: .52; }
+
+@media (max-width: 560px) {
+  .feature-gate { align-items: flex-start; flex-direction: column; min-height: 160px; }
+  .feature-gate .button { width: 100%; }
 }

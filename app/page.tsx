@@ -2,8 +2,8 @@
 
 import {
   Barcode, Boxes, Building2, ChevronDown, ClipboardCheck, FileText, LayoutDashboard,
-  LoaderCircle, LogOut, MapPin, Menu, Package, Settings, ShoppingBag, ShoppingCart,
-  Store, UserRoundCheck, Users, WalletCards, X,
+  LoaderCircle, LogOut, MapPin, Menu, Package, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings,
+  ShoppingBag, ShoppingCart, Store, UserRoundCheck, Users, WalletCards, X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -98,15 +98,20 @@ function AccountState({ profile, onLogout }: { profile: AppProfile; onLogout: ()
 function Sidebar({ current, onChange, open, onClose, profile, onLogout }: { current: ViewId; onChange: (id: ViewId) => void; open: boolean; onClose: () => void; profile: AppProfile; onLogout: () => void }) {
   const go = (id: ViewId) => { onChange(id); onClose(); };
   const allowed = roleAccess[profile.role];
-  return <>{open && <button className="sidebar-scrim" onClick={onClose} aria-label="Tutup navigasi"/>}<aside className={`sidebar ${open ? "open" : ""}`}><div className="sidebar-top"><div className="brand-lockup"><BrandMark/><div><strong>Agung Lestari</strong><span>Retail & grosir</span></div></div><button className="icon-button mobile-only" onClick={onClose}><X size={19}/></button></div><nav aria-label="Navigasi utama"><p className="nav-caption">OPERASIONAL</p>{primaryNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}<p className="nav-caption second">MANAJEMEN</p>{managementNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}</nav><div className="sidebar-foot"><div className="user-card"><div className="avatar">{profile.full_name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : profile.role === "warehouse" ? "Gudang" : "Kasir"}</span></div><button className="icon-button logout-button" onClick={onLogout} aria-label="Keluar"><LogOut size={16}/></button></div></div></aside></>;
+  return <>{open && <button type="button" className="sidebar-scrim" onClick={onClose} aria-label="Tutup navigasi"/>}<aside className={`sidebar ${open ? "open" : ""}`}><div className="sidebar-top"><div className="brand-lockup"><BrandMark/><div><strong>Agung Lestari</strong><span>Retail & grosir</span></div></div><button type="button" className="icon-button mobile-only" onClick={onClose} aria-label="Tutup navigasi"><X size={19}/></button></div><nav aria-label="Navigasi utama"><p className="nav-caption">OPERASIONAL</p>{primaryNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} aria-current={current === item.id ? "page" : undefined} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}<p className="nav-caption second">MANAJEMEN</p>{managementNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} aria-current={current === item.id ? "page" : undefined} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}</nav><div className="sidebar-foot"><div className="user-card"><div className="avatar">{profile.full_name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : profile.role === "warehouse" ? "Gudang" : "Kasir"}</span></div><button type="button" className="icon-button logout-button" onClick={onLogout} aria-label="Keluar"><LogOut size={16}/></button></div></div></aside></>;
 }
 
-function Topbar({ current, onMenu, onNotify, notificationsOpen }: { current: ViewId; onMenu: () => void; onNotify: () => void; notificationsOpen: boolean }) {
-  const copy = navTitle[current]; const { branches, activeBranchId, activeBranch, setActiveBranchId } = useAdminData();
-  return <header className="topbar"><div className="page-heading"><button className="icon-button menu-trigger" onClick={onMenu}><Menu size={20}/></button><div><p>{copy.eyebrow}</p><h1>{copy.title}</h1></div></div><div className="topbar-actions"><label className="branch-picker"><Store size={17}/><span><small>Cabang aktif</small><strong>{activeBranch?.name ?? "Pilih cabang"}</strong></span><ChevronDown size={16}/><select aria-label="Pilih cabang" value={activeBranchId} onChange={event => setActiveBranchId(event.target.value)}>{branches.filter(branch => branch.is_active).map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><NotificationButton open={notificationsOpen} onClick={onNotify}/></div></header>;
+function Topbar({ current, onMenu, onNotify, notificationsOpen, sidebarCollapsed, mobile }: { current: ViewId; onMenu: () => void; onNotify: () => void; notificationsOpen: boolean; sidebarCollapsed: boolean; mobile: boolean }) {
+  const copy = navTitle[current]; const { branches, activeBranchId, activeBranch, branchesLoading, setActiveBranchId } = useAdminData();
+  const menuLabel = mobile ? "Buka navigasi" : sidebarCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar";
+  return <header className="topbar"><div className="page-heading"><button className="icon-button menu-trigger" type="button" onClick={onMenu} aria-label={menuLabel} title={menuLabel} aria-expanded={mobile ? undefined : !sidebarCollapsed}>{mobile ? <Menu size={20}/> : sidebarCollapsed ? <PanelLeftOpen size={20}/> : <PanelLeftClose size={20}/>}</button><div><p>{copy.eyebrow}</p><h1>{copy.title}</h1></div></div><div className="topbar-actions"><label className="branch-picker"><Store size={17}/><span><small>Cabang aktif</small><strong>{branchesLoading ? "Memuat..." : activeBranch?.name ?? "Belum ada cabang"}</strong></span><ChevronDown size={16}/><select aria-label="Pilih cabang" value={activeBranchId} disabled={branchesLoading || branches.length === 0} onChange={event => setActiveBranchId(event.target.value)}><option value="" disabled>{branchesLoading ? "Memuat cabang..." : "Pilih cabang"}</option>{branches.filter(branch => branch.is_active).map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><NotificationButton open={notificationsOpen} onClick={onNotify}/></div></header>;
 }
 
 function AdminContent({ view, onChange }: { view: ViewId; onChange: (id: ViewId) => void }) {
+  const { branches, activeBranchId, branchesLoading, branchesError, refreshBranches } = useAdminData();
+  if (branchesLoading) return <section className="surface feature-gate" role="status"><LoaderCircle className="spin" size={24}/><div><strong>Menyiapkan data cabang</strong><span>Mohon tunggu sebentar.</span></div></section>;
+  if (branchesError) return <section className="surface feature-gate" role="alert"><div><strong>Data cabang belum tersedia</strong><span>{branchesError}</span></div><button type="button" className="button primary compact" onClick={() => void refreshBranches()}><RefreshCw size={16}/> Coba lagi</button></section>;
+  if (!activeBranchId && !["branches", "settings"].includes(view)) return <section className="surface feature-gate"><div><strong>Belum ada cabang aktif</strong><span>{branches.length ? "Aktifkan salah satu cabang agar fitur operasional dapat digunakan." : "Buat cabang pertama agar fitur operasional dapat digunakan."}</span></div><button type="button" className="button primary compact" onClick={() => onChange("branches")}><Store size={16}/> Kelola cabang</button></section>;
   if (view === "dashboard") return <DashboardView goTo={onChange}/>;
   if (view === "pos") return <PosView/>;
   if (view === "products") return <ProductsView/>;
@@ -125,8 +130,38 @@ function AdminContent({ view, onChange }: { view: ViewId; onChange: (id: ViewId)
 }
 
 function AdminShell({ profile, onLogout }: { profile: AppProfile; onLogout: () => void }) {
-  const [view, setView] = useState<ViewId>("dashboard"); const [menuOpen, setMenuOpen] = useState(false); const [notificationsOpen, setNotificationsOpen] = useState(false);
-  return <AdminDataProvider profile={profile}><main className="admin-shell"><Sidebar current={view} onChange={setView} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={onLogout}/><section className="workspace"><Topbar current={view} onMenu={() => setMenuOpen(true)} onNotify={() => setNotificationsOpen(open => !open)} notificationsOpen={notificationsOpen}/><NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={setView}/><div className="page-content"><AdminContent view={view} onChange={setView}/></div></section></main></AdminDataProvider>;
+  const [view, setView] = useState<ViewId>("dashboard"); const [menuOpen, setMenuOpen] = useState(false); const [notificationsOpen, setNotificationsOpen] = useState(false); const [sidebarCollapsed, setSidebarCollapsed] = useState(false); const [mobile, setMobile] = useState(false);
+  const allowedViews = roleAccess[profile.role];
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 960px)");
+    const syncViewport = () => setMobile(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
+  useEffect(() => {
+    const resolveView = () => {
+      const hashView = window.location.hash.slice(1) as ViewId;
+      const storedView = window.localStorage.getItem("agung-active-view") as ViewId | null;
+      const nextView = allowedViews.includes(hashView) ? hashView : storedView && allowedViews.includes(storedView) ? storedView : allowedViews[0];
+      setView(nextView);
+      window.localStorage.setItem("agung-active-view", nextView);
+      if (window.location.hash !== `#${nextView}`) window.history.replaceState(null, "", `#${nextView}`);
+    };
+    resolveView();
+    window.addEventListener("popstate", resolveView);
+    return () => window.removeEventListener("popstate", resolveView);
+  }, [allowedViews]);
+  const toggleSidebar = () => { if (mobile) setMenuOpen(true); else setSidebarCollapsed(collapsed => !collapsed); };
+  const navigateTo = (nextView: ViewId) => {
+    if (!allowedViews.includes(nextView)) return;
+    setView(nextView);
+    setNotificationsOpen(false);
+    window.localStorage.setItem("agung-active-view", nextView);
+    if (window.location.hash !== `#${nextView}`) window.history.pushState(null, "", `#${nextView}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  return <AdminDataProvider profile={profile}><main className={`admin-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Lewati ke konten utama</a><Sidebar current={view} onChange={navigateTo} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={onLogout}/><section className="workspace"><Topbar current={view} onMenu={toggleSidebar} onNotify={() => setNotificationsOpen(open => !open)} notificationsOpen={notificationsOpen} sidebarCollapsed={sidebarCollapsed} mobile={mobile}/><NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={navigateTo}/><div className="page-content" id="main-content" tabIndex={-1}><AdminContent view={view} onChange={navigateTo}/></div></section></main></AdminDataProvider>;
 }
 
 export default function Home() {
