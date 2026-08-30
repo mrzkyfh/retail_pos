@@ -60,6 +60,8 @@ test("keeps the retail-wholesale modules and design system wired", async () => {
   assert.match(retailViews, /admin_import_products_retail_wholesale/);
   assert.match(retailViews, /@bwip-js\/browser/);
   assert.match(retailViews, /agung-pos-checkout-queue-v1/);
+  assert.match(retailViews, /BarcodeDetector/);
+  assert.match(retailViews, /getUserMedia/);
   assert.match(retailViews, /receipt-checkout/);
   assert.match(retailViews, /Gunakan uang pas/);
   assert.match(retailViews, /Math\.min\(item\.stock/);

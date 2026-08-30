@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  ArrowRight, Barcode, Check, ClipboardCheck, Download, FileSpreadsheet,
+  ArrowRight, Barcode, Camera, Check, ClipboardCheck, Download, FileSpreadsheet,
   LoaderCircle, MapPin, Minus, Package, Plus, Printer, ReceiptText, ScanLine, Search,
-  ShoppingCart, Trash2, Upload, UserRoundCheck, Wifi, WifiOff,
+  ShoppingCart, Trash2, Upload, UserRoundCheck, Wifi, WifiOff, X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -42,6 +42,8 @@ type SaleDocument = {
   profiles: { full_name: string } | null; payments: Array<{ method: string; amount: number }>;
   sale_items: Array<{ id: string; product_name_snapshot: string; unit_name_snapshot: string; quantity: number; unit_price: number; subtotal: number }>;
 };
+type BarcodeDetectorInstance = { detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue?: string }>> };
+type BarcodeDetectorConstructor = new (options: { formats: string[] }) => BarcodeDetectorInstance;
 
 const checkoutQueueKey = "agung-pos-checkout-queue-v1";
 const readCheckoutQueue = (): CheckoutPayload[] => {
@@ -116,6 +118,9 @@ export function PosView() {
   const [loadError, setLoadError] = useState("");
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [queueCount, setQueueCount] = useState(() => typeof window === "undefined" ? 0 : readCheckoutQueue().length);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
   const toastRef = useRef(toast);
   useEffect(() => { toastRef.current = toast; }, [toast]);
   const refresh = useCallback(async () => {
@@ -163,12 +168,78 @@ export function PosView() {
   const change = cashPayment ? Math.max(0, paid - total) : 0;
   const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const shortfall = Math.max(0, total - paid);
-  const add = (product: PosProduct) => {
+  const add = useCallback((product: PosProduct) => {
     if (product.stock <= 0) { toast(`${product.name} sedang habis.`, "error"); return; }
     setCart(current => current.some(item => item.unitId === product.unitId)
       ? current.map(item => item.unitId === product.unitId ? { ...item, qty: Math.min(item.stock, item.qty + 1) } : item)
       : [...current, { ...product, qty: 1 }]);
-  };
+  }, [toast]);
+  useEffect(() => {
+    if (!cameraOpen) return;
+    let cancelled = false;
+    let frame = 0;
+    let stream: MediaStream | null = null;
+    let detecting = false;
+    let lastValue = "";
+    const stop = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      stream?.getTracks().forEach(track => track.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
+    const start = async () => {
+      setCameraError("");
+      const Detector = (window as unknown as { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
+      if (!Detector || !navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Pemindaian kamera belum didukung browser ini. Gunakan scanner fisik atau ketik barcode.");
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+        if (cancelled) { stream.getTracks().forEach(track => track.stop()); return; }
+        const video = videoRef.current;
+        if (!video) return;
+        video.srcObject = stream;
+        await video.play();
+        const detector = new Detector({ formats: ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "qr_code"] });
+        const detect = async () => {
+          if (cancelled) return;
+          if (!detecting && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            detecting = true;
+            try {
+              const [result] = await detector.detect(video);
+              const value = result?.rawValue?.trim() ?? "";
+              if (value && value !== lastValue) {
+                lastValue = value;
+                const exact = products.find(product => product.barcode.toLowerCase() === value.toLowerCase() || product.code.toLowerCase() === value.toLowerCase());
+                if (exact) {
+                  add(exact);
+                  setQuery("");
+                  setCameraOpen(false);
+                  toastRef.current(`${exact.name} ditambahkan dari kamera.`);
+                  return;
+                }
+                setCameraError(`Barcode ${value} tidak ditemukan. Arahkan kamera ke produk lain.`);
+              }
+            } catch {
+              if (!cancelled) setCameraError("Barcode belum terbaca. Pastikan label terang dan berada di dalam bingkai.");
+            } finally { detecting = false; }
+          }
+          frame = window.requestAnimationFrame(() => void detect());
+        };
+        frame = window.requestAnimationFrame(() => void detect());
+      } catch {
+        if (!cancelled) setCameraError("Kamera tidak dapat dibuka. Izinkan akses kamera atau gunakan scanner fisik.");
+      }
+    };
+    void start();
+    return () => { cancelled = true; stop(); };
+  }, [add, cameraOpen, products]);
+  useEffect(() => {
+    if (!cameraOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setCameraOpen(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [cameraOpen]);
   const scan = () => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return;
@@ -218,7 +289,7 @@ export function PosView() {
     <section className="retail-context-bar"><div>{online ? <><span className="live-dot"/> Kasir online</> : <><WifiOff size={15}/> Mode offline</>}</div><div>{queueCount ? <WifiOff size={15}/> : <Wifi size={15}/>} Antrean offline: {queueCount}</div><strong>{activeBranch?.name}</strong></section>
     <section className="pos-workspace">
       <div className="pos-catalog surface">
-        <div className="pos-toolbar"><label className="retail-search"><ScanLine size={20}/><input autoFocus value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); scan(); } }} placeholder="Scan barcode, SKU, atau cari produk"/></label><span>{loading ? "Memuat..." : `${filtered.length} produk`}</span></div>
+        <div className="pos-toolbar"><label className="retail-search"><ScanLine size={20}/><input autoFocus value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); scan(); } }} placeholder="Scan barcode, SKU, atau cari produk"/></label><button type="button" className="button secondary compact camera-scan-button" onClick={() => setCameraOpen(true)}><Camera size={17}/> Kamera</button><span>{loading ? "Memuat..." : `${filtered.length} produk`}</span></div>
         <div className="pos-product-grid">{filtered.map(product => <button type="button" key={product.unitId} className="pos-product-card" disabled={product.stock <= 0} onClick={() => add(product)}><span className="product-glyph"><Barcode size={21}/></span><strong>{product.name}</strong><small>{product.code} · {product.unit} · Rak {product.rack}</small><b>{idr(mode === "reseller" ? product.reseller : product.retail)}</b><em>{product.stock > 0 ? `${product.stock} ${product.unit}` : "Habis"}</em></button>)}{loading && <div className="retail-empty" role="status"><LoaderCircle className="spin" size={26}/><strong>Memuat katalog</strong></div>}{loadError && <div className="retail-empty" role="alert"><WifiOff size={26}/><strong>Katalog belum tersedia</strong><span>{loadError}</span><button type="button" className="button secondary compact" onClick={() => void refresh()}>Coba lagi</button></div>}{!loading&&!loadError&&!filtered.length && <div className="retail-empty"><Package size={28}/><strong>Produk tidak ditemukan</strong><span>Coba SKU, barcode, atau nama lain.</span></div>}</div>
       </div>
       <aside className="pos-receipt">
@@ -237,6 +308,7 @@ export function PosView() {
         </div>
       </aside>
     </section>
+    {cameraOpen && <div className="retail-modal-scrim camera-scanner-scrim" onMouseDown={() => setCameraOpen(false)}><section className="camera-scanner" role="dialog" aria-modal="true" aria-labelledby="camera-scanner-title" onMouseDown={event => event.stopPropagation()}><div className="camera-scanner-head"><div><p className="section-kicker">PEMINDAI BARCODE</p><h2 id="camera-scanner-title">Arahkan kamera ke label produk</h2><span>Produk akan langsung masuk ke keranjang setelah barcode terbaca.</span></div><button type="button" className="icon-button" onClick={() => setCameraOpen(false)} aria-label="Tutup pemindai kamera"><X size={19}/></button></div><div className="camera-viewport"><video ref={videoRef} muted playsInline aria-label="Pratinjau kamera pemindai barcode"/><span aria-hidden="true"/><small>Posisikan barcode di dalam bingkai</small></div>{cameraError && <div className="camera-scanner-message" role="status">{cameraError}</div>}<button type="button" className="button secondary" onClick={() => setCameraOpen(false)}>Tutup kamera</button></section></div>}
   </div>;
 }
 
