@@ -2,8 +2,9 @@
 
 import {
   Barcode, Boxes, Building2, ChevronDown, ClipboardCheck, Download, FileText, LayoutDashboard,
-  LoaderCircle, LogOut, MapPin, Menu, Package, PanelLeftClose, PanelLeftOpen, ReceiptText, RefreshCw, Settings,
+  LoaderCircle, LogOut, MapPin, Menu, Package, ReceiptText, RefreshCw, Settings,
   ShoppingBag, ShoppingCart, Smartphone, Store, UserRoundCheck, Users, WalletCards, X,
+  Home, Inbox, Calendar, Search, Bell,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -14,12 +15,22 @@ import {
   TeamView, TransactionsView, useAdminData, type AppProfile, type ViewId,
 } from "./feature-views";
 import { DataToolsView, MembersView, PosView, RacksView, StockOpnameView } from "./retail-wholesale-views";
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 
 type IconType = typeof LayoutDashboard;
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
+
 const primaryNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
   { id: "pos", label: "POS / Kasir", icon: ShoppingCart },
@@ -32,6 +43,7 @@ const primaryNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "orders", label: "Pesanan online", icon: ShoppingBag },
   { id: "shifts", label: "Shift kasir", icon: WalletCards },
 ];
+
 const managementNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "dataTools", label: "Data, label & dokumen", icon: Barcode },
   { id: "branches", label: "Cabang", icon: Building2 },
@@ -39,42 +51,14 @@ const managementNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "reports", label: "Laporan", icon: FileText },
   { id: "settings", label: "Pengaturan", icon: Settings },
 ];
+
 const roleAccess: Record<AppProfile["role"], ViewId[]> = {
   owner: [...primaryNavigation, ...managementNavigation].map(item => item.id),
   admin: [...primaryNavigation, ...managementNavigation].map(item => item.id),
   cashier: ["dashboard", "pos", "products", "customers", "transactions", "orders", "shifts", "reports"],
   warehouse: ["dashboard", "products", "inventory", "racks", "stockOpname", "dataTools", "reports", "settings"],
 };
-const mobileNavigation: Record<AppProfile["role"], { id: ViewId; label: string; icon: IconType }[]> = {
-  owner: [
-    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
-    { id: "pos", label: "Kasir", icon: ShoppingCart },
-    { id: "inventory", label: "Stok", icon: Boxes },
-    { id: "transactions", label: "Transaksi", icon: ReceiptText },
-    { id: "reports", label: "Laporan", icon: FileText },
-  ],
-  admin: [
-    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
-    { id: "pos", label: "Kasir", icon: ShoppingCart },
-    { id: "inventory", label: "Stok", icon: Boxes },
-    { id: "transactions", label: "Transaksi", icon: ReceiptText },
-    { id: "reports", label: "Laporan", icon: FileText },
-  ],
-  cashier: [
-    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
-    { id: "pos", label: "Kasir", icon: ShoppingCart },
-    { id: "customers", label: "Customer", icon: UserRoundCheck },
-    { id: "transactions", label: "Transaksi", icon: ReceiptText },
-    { id: "shifts", label: "Shift", icon: WalletCards },
-  ],
-  warehouse: [
-    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
-    { id: "products", label: "Produk", icon: Package },
-    { id: "inventory", label: "Stok", icon: Boxes },
-    { id: "stockOpname", label: "Opname", icon: ClipboardCheck },
-    { id: "settings", label: "Lainnya", icon: Settings },
-  ],
-};
+
 const navTitle: Record<ViewId, { title: string; eyebrow: string }> = {
   dashboard: { title: "Ringkasan toko", eyebrow: "Pantauan operasional terkini" },
   pos: { title: "POS / Kasir", eyebrow: "Transaksi retail dan reseller" },
@@ -93,186 +77,446 @@ const navTitle: Record<ViewId, { title: string; eyebrow: string }> = {
   settings: { title: "Pengaturan", eyebrow: "Aturan operasional dan identitas toko" },
 };
 
-function BrandMark() { return <div className="brand-mark" aria-hidden="true"><span>AL</span><i/><i/><i/><i/><i/></div>; }
-
-function LoginScreen() {
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState(""); const [phone, setPhone] = useState(""); const [address, setAddress] = useState("");
-  const [loading, setLoading] = useState(false); const [error, setError] = useState(""); const [notice, setNotice] = useState(""); const [unconfirmed, setUnconfirmed] = useState(false);
-
-  const submitAuth = async (event: React.FormEvent) => {
-    event.preventDefault(); setLoading(true); setError(""); setNotice(""); setUnconfirmed(false);
-    if (mode === "register") {
-      if (password !== confirmPassword) { setError("Konfirmasi kata sandi tidak sama."); setLoading(false); return; }
-      const { data, error: signUpError } = await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: fullName.trim(), phone: phone.trim(), address: address.trim() } } });
-      if (signUpError) setError(signUpError.message);
-      else if (!data.session) { setNotice("Pendaftaran berhasil. Klik tautan konfirmasi yang dikirim ke email Anda."); setUnconfirmed(true); }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (signInError) {
-        if (signInError.code === "email_not_confirmed" || signInError.message.toLowerCase().includes("not confirmed")) { setError("Email belum dikonfirmasi. Periksa kotak masuk atau kirim ulang tautannya."); setUnconfirmed(true); }
-        else if (signInError.code === "invalid_credentials") setError("Email atau kata sandi tidak sesuai.");
-        else setError(`Login belum berhasil: ${signInError.message}`);
-      }
-    }
-    setLoading(false);
-  };
-  const resetPassword = async () => { if (!email.trim()) { setError("Isi email terlebih dahulu."); return; } setLoading(true); setError(""); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin }); if (resetError) setError(resetError.message); else setNotice("Tautan pengaturan ulang kata sandi telah dikirim."); setLoading(false); };
-  const resendConfirmation = async () => { if (!email.trim()) { setError("Isi email terlebih dahulu."); return; } setLoading(true); const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: window.location.origin } }); if (resendError) setError(resendError.message); else setNotice("Tautan konfirmasi baru telah dikirim."); setLoading(false); };
-
-  return <main className="login-shell"><section className="login-brand-panel"><div className="login-brand"><BrandMark/><span><strong>Agung Lestari</strong><small>Sistem retail & grosir</small></span></div><div className="login-copy"><p>RETAIL · GROSIR · SATU SISTEM</p><h1>Satu stok, dua cara berjualan.</h1><span>POS, member reseller, rak, stock opname, barcode, invoice, dan laporan tersambung dalam satu pusat operasional.</span><div className="login-barcode" aria-hidden="true">|||| || | |||| | | ||| || ||||</div></div></section><section className="login-form-panel"><form className="login-form" onSubmit={submitAuth}><div><p>{mode === "login" ? "SELAMAT DATANG" : "PENDAFTARAN AKUN"}</p><h2>{mode === "login" ? "Masuk ke pusat operasional" : "Buat akun"}</h2><span>{mode === "login" ? "Gunakan email dan kata sandi yang sudah terdaftar." : "Akun baru menunggu persetujuan Owner atau Admin."}</span></div>{mode === "register" && <><label>Nama lengkap<input value={fullName} onChange={event => setFullName(event.target.value)} autoComplete="name" required/></label><div className="login-two-columns"><label>Nomor HP<input value={phone} onChange={event => setPhone(event.target.value)} autoComplete="tel"/></label><label>Alamat<input value={address} onChange={event => setAddress(event.target.value)}/></label></div></>}<label>Email<input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nama@tokolestari.com" autoComplete="email" required/></label><label>Kata sandi<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} required/></label>{mode === "register" && <label>Ulangi kata sandi<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required/></label>}{error && <div className="login-message error">{error}</div>}{notice && <div className="login-message success">{notice}</div>}<button className="button primary login-submit" disabled={loading}>{loading ? <><LoaderCircle className="spin" size={17}/> Memproses...</> : mode === "login" ? "Masuk" : "Daftar akun"}</button>{mode === "login" && <button type="button" className="forgot-button" onClick={resetPassword} disabled={loading}>Lupa kata sandi?</button>}{unconfirmed && <button type="button" className="forgot-button" onClick={resendConfirmation} disabled={loading}>Kirim ulang konfirmasi email</button>}<div className="auth-switch"><span>{mode === "login" ? "Belum mempunyai akun?" : "Sudah mempunyai akun?"}</span><button type="button" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setNotice(""); setUnconfirmed(false); }}>{mode === "login" ? "Daftar" : "Masuk"}</button></div></form></section></main>;
+function BrandMark() {
+  return <div className="brand-mark" aria-hidden="true"><span>AL</span><i /><i /><i /><i /><i /></div>;
 }
 
-function AccountState({ profile, onLogout }: { profile: AppProfile; onLogout: () => void }) {
-  const copy = profile.status === "pending" ? ["Akun menunggu persetujuan", "Admin toko perlu menyetujui akun ini sebelum dashboard dapat digunakan."] : profile.status === "rejected" ? ["Pendaftaran akun ditolak", "Hubungi admin toko jika status ini perlu diperiksa kembali."] : ["Akun dinonaktifkan", "Hubungi owner atau admin toko untuk mengaktifkan kembali akun ini."];
-  return <main className="account-state"><BrandMark/><h1>{copy[0]}</h1><p>{copy[1]}</p><span>{profile.full_name}</span><button className="button secondary" onClick={onLogout}><LogOut size={16}/> Keluar</button></main>;
-}
-
-function Sidebar({ current, onChange, open, onClose, profile, onLogout }: { current: ViewId; onChange: (id: ViewId) => void; open: boolean; onClose: () => void; profile: AppProfile; onLogout: () => void }) {
-  const go = (id: ViewId) => { onChange(id); onClose(); };
+function ModernSidebar({ current, onChange, profile, onLogout }: { current: ViewId; onChange: (id: ViewId) => void; profile: AppProfile; onLogout: () => void }) {
   const allowed = roleAccess[profile.role];
-  return <>{open && <button type="button" className="sidebar-scrim" onClick={onClose} aria-label="Tutup navigasi"/>}<aside className={`sidebar ${open ? "open" : ""}`}><div className="sidebar-top"><div className="brand-lockup"><BrandMark/><div><strong>Agung Lestari</strong><span>Retail & grosir</span></div></div><button type="button" className="icon-button mobile-only" onClick={onClose} aria-label="Tutup navigasi"><X size={19}/></button></div><nav aria-label="Navigasi utama"><p className="nav-caption">OPERASIONAL</p>{primaryNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} aria-current={current === item.id ? "page" : undefined} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}<p className="nav-caption second">MANAJEMEN</p>{managementNavigation.filter(item=>allowed.includes(item.id)).map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={`nav-item ${current === item.id ? "active" : ""}`} aria-current={current === item.id ? "page" : undefined} onClick={() => go(item.id)}><Icon size={19} strokeWidth={1.8}/><span>{item.label}</span></button>; })}</nav><div className="sidebar-foot"><div className="user-card"><div className="avatar">{profile.full_name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : profile.role === "warehouse" ? "Gudang" : "Kasir"}</span></div><button type="button" className="icon-button logout-button" onClick={onLogout} aria-label="Keluar"><LogOut size={16}/></button></div></div></aside></>;
+
+  return (
+    <Sidebar className="border-r border-gray-200 bg-white">
+      <div className="flex flex-col h-full">
+        {/* Sidebar Header */}
+        <div className="flex flex-col gap-3 p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+              AL
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">Agung Lestari</p>
+              <p className="text-xs text-gray-600">Retail & grosir</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+          {/* Operational Section */}
+          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Operasional
+          </p>
+          <SidebarMenu>
+            {primaryNavigation.filter(item => allowed.includes(item.id)).map(item => {
+              const Icon = item.icon;
+              return (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    onClick={() => onChange(item.id)}
+                    isActive={current === item.id}
+                    className={`w-full justify-start ${
+                      current === item.id
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={18} className="mr-3 shrink-0" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+
+          {/* Management Section */}
+          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6">
+            Manajemen
+          </p>
+          <SidebarMenu>
+            {managementNavigation.filter(item => allowed.includes(item.id)).map(item => {
+              const Icon = item.icon;
+              return (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    onClick={() => onChange(item.id)}
+                    isActive={current === item.id}
+                    className={`w-full justify-start ${
+                      current === item.id
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={18} className="mr-3 shrink-0" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </nav>
+
+        {/* Sidebar Footer - User Card */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group">
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-700 font-semibold text-sm flex-shrink-0">
+              {profile.full_name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900 truncate">{profile.full_name}</p>
+              <p className="text-xs text-gray-600">
+                {profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : profile.role === "warehouse" ? "Gudang" : "Kasir"}
+              </p>
+            </div>
+            <button
+              onClick={onLogout}
+              className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 rounded"
+              aria-label="Keluar"
+            >
+              <LogOut size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </Sidebar>
+  );
 }
 
-function Topbar({ current, onMenu, onNotify, notificationsOpen, sidebarCollapsed, mobile }: { current: ViewId; onMenu: () => void; onNotify: () => void; notificationsOpen: boolean; sidebarCollapsed: boolean; mobile: boolean }) {
-  const copy = navTitle[current]; const { branches, activeBranchId, activeBranch, branchesLoading, setActiveBranchId } = useAdminData();
-  const menuLabel = mobile ? "Buka navigasi" : sidebarCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar";
-  return <header className="topbar"><div className="page-heading"><button className="icon-button menu-trigger" type="button" onClick={onMenu} aria-label={menuLabel} title={menuLabel} aria-expanded={mobile ? undefined : !sidebarCollapsed}>{mobile ? <Menu size={20}/> : sidebarCollapsed ? <PanelLeftOpen size={20}/> : <PanelLeftClose size={20}/>}</button><div><p>{copy.eyebrow}</p><h1>{copy.title}</h1></div></div><div className="topbar-actions"><label className="branch-picker"><Store size={17}/><span><small>Cabang aktif</small><strong>{branchesLoading ? "Memuat..." : activeBranch?.name ?? "Belum ada cabang"}</strong></span><ChevronDown size={16}/><select aria-label="Pilih cabang" value={activeBranchId} disabled={branchesLoading || branches.length === 0} onChange={event => setActiveBranchId(event.target.value)}><option value="" disabled>{branchesLoading ? "Memuat cabang..." : "Pilih cabang"}</option>{branches.filter(branch => branch.is_active).map(branch => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label><NotificationButton open={notificationsOpen} onClick={onNotify}/></div></header>;
+function ModernTopbar({ current, onMenu, onNotify, notificationsOpen }: { current: ViewId; onMenu: () => void; onNotify: () => void; notificationsOpen: boolean }) {
+  const copy = navTitle[current];
+  const { branches, activeBranchId, activeBranch, branchesLoading, setActiveBranchId } = useAdminData();
+
+  return (
+    <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+      <div className="flex items-center gap-4 flex-1">
+        <SidebarTrigger className="p-2 hover:bg-gray-100 rounded-lg" />
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{copy.eyebrow}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        {branches.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Store size={18} className="text-gray-600" />
+            <select
+              aria-label="Pilih cabang"
+              value={activeBranchId}
+              disabled={branchesLoading || branches.length === 0}
+              onChange={event => setActiveBranchId(event.target.value)}
+              className="text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50"
+            >
+              <option value="" disabled>{branchesLoading ? "Memuat cabang..." : "Pilih cabang"}</option>
+              {branches.filter(branch => branch.is_active).map(branch => (
+                <option key={branch.id} value={branch.id}>{branch.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <button
+          onClick={onNotify}
+          className={`p-2 rounded-lg transition-colors ${
+            notificationsOpen ? "bg-gray-100 text-gray-900" : "hover:bg-gray-100 text-gray-600"
+          }`}
+          aria-label="Notifikasi"
+        >
+          <Bell size={20} />
+        </button>
+      </div>
+    </header>
+  );
 }
 
 function AdminContent({ view, onChange }: { view: ViewId; onChange: (id: ViewId) => void }) {
   const { branches, activeBranchId, branchesLoading, branchesError, refreshBranches } = useAdminData();
-  if (branchesLoading) return <section className="surface feature-gate" role="status"><LoaderCircle className="spin" size={24}/><div><strong>Menyiapkan data cabang</strong><span>Mohon tunggu sebentar.</span></div></section>;
-  if (branchesError) return <section className="surface feature-gate" role="alert"><div><strong>Data cabang belum tersedia</strong><span>{branchesError}</span></div><button type="button" className="button primary compact" onClick={() => void refreshBranches()}><RefreshCw size={16}/> Coba lagi</button></section>;
-  if (!activeBranchId && !["branches", "settings"].includes(view)) return <section className="surface feature-gate"><div><strong>Belum ada cabang aktif</strong><span>{branches.length ? "Aktifkan salah satu cabang agar fitur operasional dapat digunakan." : "Buat cabang pertama agar fitur operasional dapat digunakan."}</span></div><button type="button" className="button primary compact" onClick={() => onChange("branches")}><Store size={16}/> Kelola cabang</button></section>;
-  if (view === "dashboard") return <DashboardView goTo={onChange}/>;
-  if (view === "pos") return <PosView/>;
-  if (view === "products") return <ProductsView/>;
-  if (view === "customers") return <MembersView/>;
-  if (view === "inventory") return <InventoryView/>;
-  if (view === "racks") return <RacksView/>;
-  if (view === "stockOpname") return <StockOpnameView/>;
-  if (view === "transactions") return <TransactionsView/>;
-  if (view === "orders") return <OrdersView/>;
-  if (view === "shifts") return <ShiftsView/>;
-  if (view === "dataTools") return <DataToolsView/>;
-  if (view === "branches") return <BranchesView/>;
-  if (view === "team") return <TeamView/>;
-  if (view === "reports") return <ReportsView/>;
-  return <SettingsView/>;
+  if (branchesLoading) return <section className="flex items-center justify-center h-96 gap-3" role="status"><LoaderCircle className="animate-spin" size={24} /><div><strong>Menyiapkan data cabang</strong><span>Mohon tunggu sebentar.</span></div></section>;
+  if (branchesError) return <section className="p-8 rounded-lg border border-red-200 bg-red-50" role="alert"><div><strong className="text-red-900">Data cabang belum tersedia</strong><span className="text-red-700">{branchesError}</span></div><button type="button" className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" onClick={() => void refreshBranches()}><RefreshCw size={16} /> Coba lagi</button></section>;
+  if (!activeBranchId && !["branches", "settings"].includes(view)) return <section className="p-8 rounded-lg border border-amber-200 bg-amber-50"><div><strong className="text-amber-900">Belum ada cabang aktif</strong><span className="text-amber-700">{branches.length ? "Aktifkan salah satu cabang agar fitur operasional dapat digunakan." : "Buat cabang pertama agar fitur operasional dapat digunakan."}</span></div><button type="button" className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700" onClick={() => onChange("branches")}><Store size={16} /> Kelola cabang</button></section>;
+  if (view === "dashboard") return <DashboardView goTo={onChange} />;
+  if (view === "pos") return <PosView />;
+  if (view === "products") return <ProductsView />;
+  if (view === "customers") return <MembersView />;
+  if (view === "inventory") return <InventoryView />;
+  if (view === "racks") return <RacksView />;
+  if (view === "stockOpname") return <StockOpnameView />;
+  if (view === "transactions") return <TransactionsView />;
+  if (view === "orders") return <OrdersView />;
+  if (view === "shifts") return <ShiftsView />;
+  if (view === "dataTools") return <DataToolsView />;
+  if (view === "branches") return <BranchesView goTo={onChange} />;
+  if (view === "team") return <TeamView />;
+  if (view === "reports") return <ReportsView />;
+  if (view === "settings") return <SettingsView />;
+  return <div className="p-8 text-center text-gray-500">Tampilan tidak ditemukan</div>;
 }
 
-function MobileInstallPrompt() {
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [ios] = useState(() => typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent));
-  useEffect(() => {
-    const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
-    const installed = window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
-    if (installed || window.localStorage.getItem("agung-mobile-install-dismissed") === "1") return;
-    const showTimer = window.setTimeout(() => setVisible(true), 1800);
-    const capturePrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPromptEvent);
-      setVisible(true);
-    };
-    window.addEventListener("beforeinstallprompt", capturePrompt);
-    return () => { window.clearTimeout(showTimer); window.removeEventListener("beforeinstallprompt", capturePrompt); };
-  }, []);
-  const dismiss = () => { setVisible(false); window.localStorage.setItem("agung-mobile-install-dismissed", "1"); };
-  const install = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") setVisible(false);
-    setInstallPrompt(null);
-  };
-  if (!visible) return null;
-  return <aside className="mobile-install-card" aria-label="Pasang aplikasi Agung Lestari"><span><Smartphone size={20}/></span><div><strong>Pasang aplikasi di HP</strong><small>{installPrompt ? "Buka lebih cepat dari layar utama." : ios ? "Ketuk Bagikan, lalu Tambahkan ke Layar Utama." : "Buka menu browser, lalu pilih Tambahkan ke layar utama."}</small></div>{installPrompt && <button type="button" className="install-action" onClick={() => void install()}><Download size={15}/> Pasang</button>}<button type="button" className="install-dismiss" onClick={dismiss} aria-label="Tutup ajakan pemasangan"><X size={16}/></button></aside>;
-}
+function LoginScreen() {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
-function AdminShell({ profile, onLogout }: { profile: AppProfile; onLogout: () => void }) {
-  const [view, setView] = useState<ViewId>("dashboard"); const [menuOpen, setMenuOpen] = useState(false); const [notificationsOpen, setNotificationsOpen] = useState(false); const [sidebarCollapsed, setSidebarCollapsed] = useState(false); const [mobile, setMobile] = useState(false);
-  const allowedViews = roleAccess[profile.role];
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 960px)");
-    const syncViewport = () => setMobile(media.matches);
-    syncViewport();
-    media.addEventListener("change", syncViewport);
-    return () => media.removeEventListener("change", syncViewport);
-  }, []);
-  useEffect(() => {
-    const resolveView = () => {
-      const hashView = window.location.hash.slice(1) as ViewId;
-      const storedView = window.localStorage.getItem("agung-active-view") as ViewId | null;
-      const nextView = allowedViews.includes(hashView) ? hashView : storedView && allowedViews.includes(storedView) ? storedView : allowedViews[0];
-      setView(nextView);
-      window.localStorage.setItem("agung-active-view", nextView);
-      if (window.location.hash !== `#${nextView}`) window.history.replaceState(null, "", `#${nextView}`);
-    };
-    resolveView();
-    window.addEventListener("popstate", resolveView);
-    return () => window.removeEventListener("popstate", resolveView);
-  }, [allowedViews]);
-  const toggleSidebar = () => { if (mobile) setMenuOpen(true); else setSidebarCollapsed(collapsed => !collapsed); };
-  const navigateTo = (nextView: ViewId) => {
-    if (!allowedViews.includes(nextView)) return;
-    setView(nextView);
-    setNotificationsOpen(false);
-    window.localStorage.setItem("agung-active-view", nextView);
-    if (window.location.hash !== `#${nextView}`) window.history.pushState(null, "", `#${nextView}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const submitAuth = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setNotice("");
+    setUnconfirmed(false);
+
+    if (mode === "register") {
+      if (password !== confirmPassword) {
+        setError("Konfirmasi kata sandi tidak sama.");
+        setLoading(false);
+        return;
+      }
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+            address: address.trim(),
+          },
+        },
+      });
+      if (signUpError) setError(signUpError.message);
+      else if (!data.session) {
+        setNotice("Pendaftaran berhasil. Klik tautan konfirmasi yang dikirim ke email Anda.");
+        setUnconfirmed(true);
+      }
+    } else {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) {
+        if (signInError.code === "email_not_confirmed" || signInError.message.toLowerCase().includes("not confirmed")) {
+          setError("Email belum dikonfirmasi. Periksa kotak masuk atau kirim ulang tautannya.");
+          setUnconfirmed(true);
+        } else if (signInError.code === "invalid_credentials") {
+          setError("Email atau kata sandi tidak sesuai.");
+        } else {
+          setError(`Login belum berhasil: ${signInError.message}`);
+        }
+      }
+    }
+    setLoading(false);
   };
-  return <AdminDataProvider profile={profile}><main className={`admin-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Lewati ke konten utama</a><Sidebar current={view} onChange={navigateTo} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={onLogout}/><section className="workspace"><Topbar current={view} onMenu={toggleSidebar} onNotify={() => setNotificationsOpen(open => !open)} notificationsOpen={notificationsOpen} sidebarCollapsed={sidebarCollapsed} mobile={mobile}/><NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={navigateTo}/><div className="page-content" id="main-content" tabIndex={-1}><AdminContent view={view} onChange={navigateTo}/></div></section><MobileInstallPrompt/><nav className="mobile-bottom-nav" aria-label="Navigasi aplikasi mobile">{mobileNavigation[profile.role].map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={view === item.id ? "active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => navigateTo(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav></main></AdminDataProvider>;
+
+  return (
+    <main className="min-h-screen flex bg-gray-50">
+      {/* Left Panel - Brand */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-700 text-white p-12 flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center font-bold">AL</div>
+            <div>
+              <p className="font-bold text-lg">Agung Lestari</p>
+              <p className="text-sm text-blue-100">Sistem retail & grosir</p>
+            </div>
+          </div>
+          <h2 className="text-4xl font-bold mb-4">Satu stok, dua cara berjualan.</h2>
+          <p className="text-blue-100 text-lg">POS, member reseller, rak, stock opname, barcode, invoice, dan laporan tersambung dalam satu pusat operasional.</p>
+        </div>
+      </div>
+
+      {/* Right Panel - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <form className="w-full max-w-sm space-y-6" onSubmit={submitAuth}>
+          <div>
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">{mode === "login" ? "SELAMAT DATANG" : "PENDAFTARAN AKUN"}</p>
+            <h2 className="text-3xl font-bold text-gray-900">{mode === "login" ? "Masuk ke pusat operasional" : "Buat akun"}</h2>
+            <p className="text-gray-600 mt-2">{mode === "login" ? "Gunakan email dan kata sandi yang sudah terdaftar." : "Akun baru menunggu persetujuan Owner atau Admin."}</p>
+          </div>
+
+          {mode === "register" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">Nama lengkap</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={event => setFullName(event.target.value)}
+                  autoComplete="name"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">Nomor HP</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={event => setPhone(event.target.value)}
+                    autoComplete="tel"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">Alamat</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={event => setAddress(event.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={event => setEmail(event.target.value)}
+              placeholder="nama@tokolestari.com"
+              autoComplete="email"
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Kata sandi</label>
+            <input
+              type="password"
+              value={password}
+              onChange={event => setPassword(event.target.value)}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {mode === "register" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">Ulangi kata sandi</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={event => setConfirmPassword(event.target.value)}
+                autoComplete="new-password"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {error && <div className="p-4 rounded-lg bg-red-50 text-red-800 text-sm">{error}</div>}
+          {notice && <div className="p-4 rounded-lg bg-green-50 text-green-800 text-sm">{notice}</div>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMode(mode === "login" ? "register" : "login")}
+            className="w-full text-center text-sm text-gray-600 hover:text-gray-900 font-medium"
+          >
+            {mode === "login" ? "Belum punya akun? Daftar sekarang" : "Sudah punya akun? Masuk"}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
 }
 
 export default function Home() {
-  const [session, setSession] = useState<Session | null>(null); const [profile, setProfile] = useState<AppProfile | null>(null); const [authLoading, setAuthLoading] = useState(true);
-  const authUserId = useRef<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<AppProfile | null>(null);
+  const [view, setView] = useState<ViewId>("dashboard");
+  const [loading, setLoading] = useState(true);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   useEffect(() => {
-    let mounted = true;
-    const loadingGuard = window.setTimeout(() => { if (mounted) setAuthLoading(false); }, 8000);
-    supabase.auth.getSession()
-      .then(({ data }) => { if (mounted) { authUserId.current = data.session?.user.id ?? null; setSession(data.session); if (!data.session) setAuthLoading(false); } })
-      .catch(() => { if (mounted) setAuthLoading(false); });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!mounted) return;
-      const nextUserId = nextSession?.user.id ?? null;
-      const userChanged = nextUserId !== authUserId.current;
-      authUserId.current = nextUserId;
-      setSession(nextSession);
-      if (!nextSession) { setProfile(null); setAuthLoading(false); }
-      else if (userChanged) { setProfile(null); setAuthLoading(true); }
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+
+      if (data.session) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.session.user.id)
+          .single();
+
+        if (profileData) {
+          setProfile(profileData as AppProfile);
+        }
+      }
+      setLoading(false);
+    };
+
+    getSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
     });
-    return () => { mounted = false; window.clearTimeout(loadingGuard); listener.subscription.unsubscribe(); };
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV !== "production") {
-      void navigator.serviceWorker.getRegistrations().then(registrations => Promise.all(registrations.map(registration => registration.unregister())));
-      if ("caches" in window) void caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("agung-lestari-")).map(key => caches.delete(key))));
-      return;
-    }
-    const register = () => void navigator.serviceWorker.register("/sw.js");
-    window.addEventListener("load", register);
-    if (document.readyState === "complete") register();
-    return () => window.removeEventListener("load", register);
-  }, []);
-  useEffect(() => {
-    if (!session?.user.id) return;
-    let mounted = true;
-    const controller = new AbortController();
-    const profileGuard = window.setTimeout(() => { controller.abort(); if (mounted) setAuthLoading(false); }, 8000);
-    supabase.from("profiles").select("id,full_name,role,status,organization_id").eq("id", session.user.id).single().abortSignal(controller.signal)
-      .then(({ data, error }) => { if (mounted) { if (!error && data) setProfile(data as AppProfile); setAuthLoading(false); } })
-      .catch(() => { if (mounted) setAuthLoading(false); });
-    return () => { mounted = false; window.clearTimeout(profileGuard); controller.abort(); };
-  }, [session?.user.id]);
-  const logout = async () => { await supabase.auth.signOut(); setProfile(null); };
-  if (authLoading) return <main className="app-loading"><BrandMark/><LoaderCircle className="spin" size={22}/><span>Memuat pusat operasional...</span></main>;
-  if (!session) return <LoginScreen/>;
-  if (!profile) return <main className="account-state"><BrandMark/><h1>Profil belum tersedia</h1><p>Silakan keluar lalu masuk kembali.</p><button className="button secondary" onClick={logout}>Keluar</button></main>;
-  if (profile.status !== "active") return <AccountState profile={profile} onLogout={logout}/>;
-  return <AdminShell profile={profile} onLogout={logout}/>;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setProfile(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <LoaderCircle className="animate-spin text-blue-600" size={24} />
+          <span className="text-gray-600">Memuat...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session || !profile) {
+    return <LoginScreen />;
+  }
+
+  return (
+    <AdminDataProvider>
+      <SidebarProvider>
+        <div className="flex h-screen bg-gray-50">
+          <ModernSidebar current={view} onChange={setView} profile={profile} onLogout={handleLogout} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <ModernTopbar current={view} onMenu={() => { }} onNotify={() => setNotificationsOpen(!notificationsOpen)} notificationsOpen={notificationsOpen} />
+            <div className="flex-1 overflow-auto">
+              <div className="p-6">
+                <AdminContent view={view} onChange={setView} />
+              </div>
+              {notificationsOpen && (
+                <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
+                  <NotificationPanel />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </SidebarProvider>
+    </AdminDataProvider>
+  );
 }
