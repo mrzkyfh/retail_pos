@@ -69,10 +69,14 @@ test("keeps the retail-wholesale modules and design system wired", async () => {
   assert.match(importMigration, /complete JSON batch is committed or rolled back/i);
   assert.match(rackMigration, /set_product_rack_placement/);
   assert.equal(JSON.parse(manifest).display, "standalone");
-  assert.match(serviceWorker, /agung-lestari-shell-v2/);
+  assert.match(serviceWorker, /agung-lestari-shell-v3/);
   assert.match(serviceWorker, /DEVELOPMENT_PREFIXES/);
   assert.match(page, /serviceWorker\.register\("\/sw\.js"\)/);
   assert.match(page, /setAuthLoading\(false\).*8000|8000.*setAuthLoading\(false\)/s);
+  assert.match(page, /mobile-bottom-nav/);
+  assert.match(page, /beforeinstallprompt/);
+  assert.equal(JSON.parse(manifest).orientation, "portrait-primary");
+  assert.equal(JSON.parse(manifest).icons.length, 3);
   assert.match(packageJson, /xlsx-0\.20\.3\.tgz/);
 
   await assert.rejects(access(new URL("app/_sites-preview/SkeletonPreview.tsx", projectRoot)));

@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  Barcode, Boxes, Building2, ChevronDown, ClipboardCheck, FileText, LayoutDashboard,
-  LoaderCircle, LogOut, MapPin, Menu, Package, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings,
-  ShoppingBag, ShoppingCart, Store, UserRoundCheck, Users, WalletCards, X,
+  Barcode, Boxes, Building2, ChevronDown, ClipboardCheck, Download, FileText, LayoutDashboard,
+  LoaderCircle, LogOut, MapPin, Menu, Package, PanelLeftClose, PanelLeftOpen, ReceiptText, RefreshCw, Settings,
+  ShoppingBag, ShoppingCart, Smartphone, Store, UserRoundCheck, Users, WalletCards, X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -16,6 +16,10 @@ import {
 import { DataToolsView, MembersView, PosView, RacksView, StockOpnameView } from "./retail-wholesale-views";
 
 type IconType = typeof LayoutDashboard;
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
 const primaryNavigation: { id: ViewId; label: string; icon: IconType }[] = [
   { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
   { id: "pos", label: "POS / Kasir", icon: ShoppingCart },
@@ -40,6 +44,36 @@ const roleAccess: Record<AppProfile["role"], ViewId[]> = {
   admin: [...primaryNavigation, ...managementNavigation].map(item => item.id),
   cashier: ["dashboard", "pos", "products", "customers", "transactions", "orders", "shifts", "reports"],
   warehouse: ["dashboard", "products", "inventory", "racks", "stockOpname", "dataTools", "reports", "settings"],
+};
+const mobileNavigation: Record<AppProfile["role"], { id: ViewId; label: string; icon: IconType }[]> = {
+  owner: [
+    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
+    { id: "pos", label: "Kasir", icon: ShoppingCart },
+    { id: "inventory", label: "Stok", icon: Boxes },
+    { id: "transactions", label: "Transaksi", icon: ReceiptText },
+    { id: "reports", label: "Laporan", icon: FileText },
+  ],
+  admin: [
+    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
+    { id: "pos", label: "Kasir", icon: ShoppingCart },
+    { id: "inventory", label: "Stok", icon: Boxes },
+    { id: "transactions", label: "Transaksi", icon: ReceiptText },
+    { id: "reports", label: "Laporan", icon: FileText },
+  ],
+  cashier: [
+    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
+    { id: "pos", label: "Kasir", icon: ShoppingCart },
+    { id: "customers", label: "Customer", icon: UserRoundCheck },
+    { id: "transactions", label: "Transaksi", icon: ReceiptText },
+    { id: "shifts", label: "Shift", icon: WalletCards },
+  ],
+  warehouse: [
+    { id: "dashboard", label: "Beranda", icon: LayoutDashboard },
+    { id: "products", label: "Produk", icon: Package },
+    { id: "inventory", label: "Stok", icon: Boxes },
+    { id: "stockOpname", label: "Opname", icon: ClipboardCheck },
+    { id: "settings", label: "Lainnya", icon: Settings },
+  ],
 };
 const navTitle: Record<ViewId, { title: string; eyebrow: string }> = {
   dashboard: { title: "Ringkasan toko", eyebrow: "Pantauan operasional terkini" },
@@ -129,6 +163,35 @@ function AdminContent({ view, onChange }: { view: ViewId; onChange: (id: ViewId)
   return <SettingsView/>;
 }
 
+function MobileInstallPrompt() {
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [ios] = useState(() => typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent));
+  useEffect(() => {
+    const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
+    const installed = window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
+    if (installed || window.localStorage.getItem("agung-mobile-install-dismissed") === "1") return;
+    const showTimer = window.setTimeout(() => setVisible(true), 1800);
+    const capturePrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+      setVisible(true);
+    };
+    window.addEventListener("beforeinstallprompt", capturePrompt);
+    return () => { window.clearTimeout(showTimer); window.removeEventListener("beforeinstallprompt", capturePrompt); };
+  }, []);
+  const dismiss = () => { setVisible(false); window.localStorage.setItem("agung-mobile-install-dismissed", "1"); };
+  const install = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === "accepted") setVisible(false);
+    setInstallPrompt(null);
+  };
+  if (!visible) return null;
+  return <aside className="mobile-install-card" aria-label="Pasang aplikasi Agung Lestari"><span><Smartphone size={20}/></span><div><strong>Pasang aplikasi di HP</strong><small>{installPrompt ? "Buka lebih cepat dari layar utama." : ios ? "Ketuk Bagikan, lalu Tambahkan ke Layar Utama." : "Buka menu browser, lalu pilih Tambahkan ke layar utama."}</small></div>{installPrompt && <button type="button" className="install-action" onClick={() => void install()}><Download size={15}/> Pasang</button>}<button type="button" className="install-dismiss" onClick={dismiss} aria-label="Tutup ajakan pemasangan"><X size={16}/></button></aside>;
+}
+
 function AdminShell({ profile, onLogout }: { profile: AppProfile; onLogout: () => void }) {
   const [view, setView] = useState<ViewId>("dashboard"); const [menuOpen, setMenuOpen] = useState(false); const [notificationsOpen, setNotificationsOpen] = useState(false); const [sidebarCollapsed, setSidebarCollapsed] = useState(false); const [mobile, setMobile] = useState(false);
   const allowedViews = roleAccess[profile.role];
@@ -161,7 +224,7 @@ function AdminShell({ profile, onLogout }: { profile: AppProfile; onLogout: () =
     if (window.location.hash !== `#${nextView}`) window.history.pushState(null, "", `#${nextView}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  return <AdminDataProvider profile={profile}><main className={`admin-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Lewati ke konten utama</a><Sidebar current={view} onChange={navigateTo} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={onLogout}/><section className="workspace"><Topbar current={view} onMenu={toggleSidebar} onNotify={() => setNotificationsOpen(open => !open)} notificationsOpen={notificationsOpen} sidebarCollapsed={sidebarCollapsed} mobile={mobile}/><NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={navigateTo}/><div className="page-content" id="main-content" tabIndex={-1}><AdminContent view={view} onChange={navigateTo}/></div></section></main></AdminDataProvider>;
+  return <AdminDataProvider profile={profile}><main className={`admin-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Lewati ke konten utama</a><Sidebar current={view} onChange={navigateTo} open={menuOpen} onClose={() => setMenuOpen(false)} profile={profile} onLogout={onLogout}/><section className="workspace"><Topbar current={view} onMenu={toggleSidebar} onNotify={() => setNotificationsOpen(open => !open)} notificationsOpen={notificationsOpen} sidebarCollapsed={sidebarCollapsed} mobile={mobile}/><NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={navigateTo}/><div className="page-content" id="main-content" tabIndex={-1}><AdminContent view={view} onChange={navigateTo}/></div></section><MobileInstallPrompt/><nav className="mobile-bottom-nav" aria-label="Navigasi aplikasi mobile">{mobileNavigation[profile.role].map(item => { const Icon = item.icon; return <button type="button" key={item.id} className={view === item.id ? "active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => navigateTo(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav></main></AdminDataProvider>;
 }
 
 export default function Home() {

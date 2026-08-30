@@ -29,7 +29,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Sistem Retail & Grosir — Agung Lestari",
     description: "POS, member/reseller, stok, rak, stock opname, barcode, invoice, dan laporan Toko Agung Lestari.",
     manifest: "/manifest.webmanifest",
-    icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
+    applicationName: "Agung Lestari",
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Agung Lestari" },
+    icons: {
+      icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }],
+      apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    },
     openGraph: {
       title: "Agung Lestari — Sistem Retail & Grosir",
       description: "Retail dan grosir dalam satu sumber stok dan transaksi.",

@@ -1,5 +1,5 @@
-const CACHE_NAME = "agung-lestari-shell-v2";
-const SHELL = ["/", "/manifest.webmanifest", "/favicon.svg"];
+const CACHE_NAME = "agung-lestari-shell-v3";
+const SHELL = ["/", "/manifest.webmanifest", "/favicon.svg", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png"];
 const DEVELOPMENT_PREFIXES = ["/@vite/", "/@react-refresh", "/@id/", "/app/", "/lib/", "/node_modules/"];
 
 self.addEventListener("install", (event) => {

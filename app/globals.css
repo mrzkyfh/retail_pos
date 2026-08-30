@@ -87,6 +87,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .notification-panel > .text-action { width: 100%; justify-content: center; border-top: 1px solid var(--line); padding: 13px; }
 
 .page-content { padding: 26px 32px 48px; max-width: 1540px; margin: 0 auto; }
+.mobile-bottom-nav { display: none; }
+.mobile-install-card { display: none; }
 .view-stack { display: flex; flex-direction: column; gap: 18px; }
 .welcome-band { min-height: 104px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 22px 20px 25px; border: 1px solid #dce5dc; border-radius: 13px; background: linear-gradient(100deg, #eff4ec 0%, #f8f4e8 100%); }
 .welcome-band h2 { margin: 4px 0 5px; font-family: Georgia, serif; font-size: 26px; font-weight: 500; letter-spacing: -.025em; }
@@ -1393,6 +1395,61 @@ button, input, select, textarea { font: inherit; }
 }
 
 @media (max-width: 760px) {
+  .mobile-bottom-nav {
+    height: calc(68px + env(safe-area-inset-bottom));
+    position: fixed;
+    z-index: 60;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 6px 6px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--minimal-light) 96%, transparent);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 -10px 30px rgba(15,19,25,.08);
+  }
+  .mobile-bottom-nav button {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 2px;
+    color: var(--muted);
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    font-size: 9px;
+    font-weight: 650;
+  }
+  .mobile-bottom-nav button.active { color: var(--minimal-light); background: var(--minimal-dark); }
+  .mobile-install-card {
+    position: fixed;
+    z-index: 58;
+    right: 12px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    left: 12px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto 28px;
+    align-items: center;
+    gap: 10px;
+    padding: 11px;
+    color: var(--minimal-light);
+    border: 1px solid color-mix(in srgb, var(--minimal-light) 15%, transparent);
+    border-radius: 10px;
+    background: var(--minimal-dark);
+    box-shadow: 0 16px 40px rgba(15,19,25,.25);
+  }
+  .mobile-install-card > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; color: var(--minimal-dark); background: var(--minimal-light); }
+  .mobile-install-card > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .mobile-install-card strong { font-size: 11px; }
+  .mobile-install-card small { color: color-mix(in srgb, var(--minimal-light) 68%, var(--minimal-dark)); font-size: 9px; line-height: 1.35; }
+  .install-action { min-height: 34px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; color: var(--minimal-dark); border: 0; border-radius: 6px; background: var(--minimal-light); font-size: 10px; font-weight: 750; }
+  .install-dismiss { width: 28px; height: 28px; display: grid; place-items: center; color: var(--minimal-light); border: 0; background: transparent; }
+  .page-content { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   body { font-size: 15px; }
   .topbar { height: 70px; min-height: 70px; padding: 0 14px; }
   .page-content { padding: 18px 14px 40px; }
