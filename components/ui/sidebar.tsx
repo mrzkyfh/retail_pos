@@ -126,11 +126,10 @@ const SidebarProvider = React.forwardRef<
         }}
       >
         <div
-          style={
-            {
-              "--sidebar-width": "16rem",
-            } as React.CSSProperties
-          }
+          style={{
+            "--sidebar-width": "16rem",
+            ...style,
+          } as React.CSSProperties}
           className={cn(
             "flex h-full w-full flex-col bg-background",
             className
@@ -192,6 +191,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
+        data-side={side}
         data-state={open ? "open" : "closed"}
         data-collapsible={collapsible}
         className={cn(
@@ -327,12 +327,13 @@ const SidebarMenuButton = React.forwardRef<
 )
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
-const SidebarMenuButtonTooltip = ({
-  children,
-  delayDuration = 200,
-  side = "right",
-  ...props
-}: React.ComponentProps<any>) => {
+type SidebarMenuButtonTooltipProps = {
+  children: React.ReactNode
+  delayDuration?: number
+  side?: "top" | "right" | "bottom" | "left"
+}
+
+const SidebarMenuButtonTooltip = ({ children }: SidebarMenuButtonTooltipProps) => {
   return <>{children}</>
 }
 
@@ -371,6 +372,7 @@ const SidebarMenuSkeleton = React.forwardRef<
   <div
     ref={ref}
     data-sidebar="menu-skeleton"
+    data-show-icon={showIcon}
     className={cn("rounded-md bg-sidebar-accent px-2 py-1.5", className)}
     {...props}
   />

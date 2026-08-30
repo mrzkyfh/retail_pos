@@ -1,63 +1,18 @@
 "use client";
 
 import {
-  Barcode, Boxes, Building2, ChevronDown, ClipboardCheck, Download, FileText, LayoutDashboard,
-  LoaderCircle, LogOut, MapPin, Menu, Package, ReceiptText, RefreshCw, Settings,
-  ShoppingBag, ShoppingCart, Smartphone, Store, UserRoundCheck, Users, WalletCards, X,
-  Home, Inbox, Calendar, Search, Bell,
+  Bell, LoaderCircle, Menu, RefreshCw, Store,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import {
-  AdminDataProvider, BranchesView, DashboardView, InventoryView, NotificationButton,
+  AdminDataProvider, BranchesView, DashboardView, InventoryView,
   NotificationPanel, OrdersView, ProductsView, ReportsView, SettingsView, ShiftsView,
   TeamView, TransactionsView, useAdminData, type AppProfile, type ViewId,
 } from "./feature-views";
 import { DataToolsView, MembersView, PosView, RacksView, StockOpnameView } from "./retail-wholesale-views";
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
-
-type IconType = typeof LayoutDashboard;
-type InstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
-
-const primaryNavigation: { id: ViewId; label: string; icon: IconType }[] = [
-  { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
-  { id: "pos", label: "POS / Kasir", icon: ShoppingCart },
-  { id: "products", label: "Produk", icon: Package },
-  { id: "customers", label: "Member / Reseller", icon: UserRoundCheck },
-  { id: "inventory", label: "Stok & pembelian", icon: Boxes },
-  { id: "racks", label: "Rak & penempatan", icon: MapPin },
-  { id: "stockOpname", label: "Stock opname", icon: ClipboardCheck },
-  { id: "transactions", label: "Transaksi", icon: ShoppingCart },
-  { id: "orders", label: "Pesanan online", icon: ShoppingBag },
-  { id: "shifts", label: "Shift kasir", icon: WalletCards },
-];
-
-const managementNavigation: { id: ViewId; label: string; icon: IconType }[] = [
-  { id: "dataTools", label: "Data, label & dokumen", icon: Barcode },
-  { id: "branches", label: "Cabang", icon: Building2 },
-  { id: "team", label: "Pegawai", icon: Users },
-  { id: "reports", label: "Laporan", icon: FileText },
-  { id: "settings", label: "Pengaturan", icon: Settings },
-];
-
-const roleAccess: Record<AppProfile["role"], ViewId[]> = {
-  owner: [...primaryNavigation, ...managementNavigation].map(item => item.id),
-  admin: [...primaryNavigation, ...managementNavigation].map(item => item.id),
-  cashier: ["dashboard", "pos", "products", "customers", "transactions", "orders", "shifts", "reports"],
-  warehouse: ["dashboard", "products", "inventory", "racks", "stockOpname", "dataTools", "reports", "settings"],
-};
+import { AppSidebar } from "@/components/ui/sidebar-component";
 
 const navTitle: Record<ViewId, { title: string; eyebrow: string }> = {
   dashboard: { title: "Ringkasan toko", eyebrow: "Pantauan operasional terkini" },
@@ -77,134 +32,30 @@ const navTitle: Record<ViewId, { title: string; eyebrow: string }> = {
   settings: { title: "Pengaturan", eyebrow: "Aturan operasional dan identitas toko" },
 };
 
-function BrandMark() {
-  return <div className="brand-mark" aria-hidden="true"><span>AL</span><i /><i /><i /><i /><i /></div>;
-}
-
-function ModernSidebar({ current, onChange, profile, onLogout }: { current: ViewId; onChange: (id: ViewId) => void; profile: AppProfile; onLogout: () => void }) {
-  const allowed = roleAccess[profile.role];
-
-  return (
-    <Sidebar className="border-r border-gray-200 bg-white">
-      <div className="flex flex-col h-full">
-        {/* Sidebar Header */}
-        <div className="flex flex-col gap-3 p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-              AL
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">Agung Lestari</p>
-              <p className="text-xs text-gray-600">Retail & grosir</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
-          {/* Operational Section */}
-          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Operasional
-          </p>
-          <SidebarMenu>
-            {primaryNavigation.filter(item => allowed.includes(item.id)).map(item => {
-              const Icon = item.icon;
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onChange(item.id)}
-                    isActive={current === item.id}
-                    className={`w-full justify-start ${
-                      current === item.id
-                        ? "bg-blue-50 text-blue-700 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon size={18} className="mr-3 shrink-0" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-
-          {/* Management Section */}
-          <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6">
-            Manajemen
-          </p>
-          <SidebarMenu>
-            {managementNavigation.filter(item => allowed.includes(item.id)).map(item => {
-              const Icon = item.icon;
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => onChange(item.id)}
-                    isActive={current === item.id}
-                    className={`w-full justify-start ${
-                      current === item.id
-                        ? "bg-blue-50 text-blue-700 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon size={18} className="mr-3 shrink-0" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </nav>
-
-        {/* Sidebar Footer - User Card */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer group">
-            <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-700 font-semibold text-sm flex-shrink-0">
-              {profile.full_name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900 truncate">{profile.full_name}</p>
-              <p className="text-xs text-gray-600">
-                {profile.role === "owner" ? "Owner" : profile.role === "admin" ? "Admin" : profile.role === "warehouse" ? "Gudang" : "Kasir"}
-              </p>
-            </div>
-            <button
-              onClick={onLogout}
-              className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 rounded"
-              aria-label="Keluar"
-            >
-              <LogOut size={16} className="text-gray-600" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </Sidebar>
-  );
-}
-
 function ModernTopbar({ current, onMenu, onNotify, notificationsOpen }: { current: ViewId; onMenu: () => void; onNotify: () => void; notificationsOpen: boolean }) {
   const copy = navTitle[current];
-  const { branches, activeBranchId, activeBranch, branchesLoading, setActiveBranchId } = useAdminData();
+  const { branches, activeBranchId, branchesLoading, setActiveBranchId } = useAdminData();
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-      <div className="flex items-center gap-4 flex-1">
-        <SidebarTrigger className="p-2 hover:bg-gray-100 rounded-lg" />
+    <header className="app-topbar flex items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        <button type="button" onClick={onMenu} className="grid size-10 shrink-0 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Buka navigasi"><Menu size={20} /></button>
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{copy.eyebrow}</p>
-          <h1 className="text-2xl font-bold text-gray-900">{copy.title}</h1>
+          <p className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-600 sm:block">{copy.eyebrow}</p>
+          <h1 className="truncate text-lg font-bold tracking-tight text-slate-950 sm:text-xl">{copy.title}</h1>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         {branches.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Store size={18} className="text-gray-600" />
+          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 sm:flex">
+            <Store size={17} className="text-blue-600" />
             <select
               aria-label="Pilih cabang"
               value={activeBranchId}
               disabled={branchesLoading || branches.length === 0}
               onChange={event => setActiveBranchId(event.target.value)}
-              className="text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-50"
+              className="h-10 min-w-32 border-0 bg-transparent text-sm font-semibold text-slate-800 outline-none"
             >
               <option value="" disabled>{branchesLoading ? "Memuat cabang..." : "Pilih cabang"}</option>
               {branches.filter(branch => branch.is_active).map(branch => (
@@ -215,8 +66,8 @@ function ModernTopbar({ current, onMenu, onNotify, notificationsOpen }: { curren
         )}
         <button
           onClick={onNotify}
-          className={`p-2 rounded-lg transition-colors ${
-            notificationsOpen ? "bg-gray-100 text-gray-900" : "hover:bg-gray-100 text-gray-600"
+          className={`grid size-10 place-items-center rounded-xl border transition-colors ${
+            notificationsOpen ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900"
           }`}
           aria-label="Notifikasi"
         >
@@ -243,7 +94,7 @@ function AdminContent({ view, onChange }: { view: ViewId; onChange: (id: ViewId)
   if (view === "orders") return <OrdersView />;
   if (view === "shifts") return <ShiftsView />;
   if (view === "dataTools") return <DataToolsView />;
-  if (view === "branches") return <BranchesView goTo={onChange} />;
+  if (view === "branches") return <BranchesView />;
   if (view === "team") return <TeamView />;
   if (view === "reports") return <ReportsView />;
   if (view === "settings") return <SettingsView />;
@@ -261,14 +112,12 @@ function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [unconfirmed, setUnconfirmed] = useState(false);
 
   const submitAuth = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError("");
     setNotice("");
-    setUnconfirmed(false);
 
     if (mode === "register") {
       if (password !== confirmPassword) {
@@ -290,7 +139,6 @@ function LoginScreen() {
       if (signUpError) setError(signUpError.message);
       else if (!data.session) {
         setNotice("Pendaftaran berhasil. Klik tautan konfirmasi yang dikirim ke email Anda.");
-        setUnconfirmed(true);
       }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -300,7 +148,6 @@ function LoginScreen() {
       if (signInError) {
         if (signInError.code === "email_not_confirmed" || signInError.message.toLowerCase().includes("not confirmed")) {
           setError("Email belum dikonfirmasi. Periksa kotak masuk atau kirim ulang tautannya.");
-          setUnconfirmed(true);
         } else if (signInError.code === "invalid_credentials") {
           setError("Email atau kata sandi tidak sesuai.");
         } else {
@@ -443,6 +290,7 @@ export default function Home() {
   const [view, setView] = useState<ViewId>("dashboard");
   const [loading, setLoading] = useState(true);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -498,25 +346,23 @@ export default function Home() {
   }
 
   return (
-    <AdminDataProvider>
-      <SidebarProvider>
-        <div className="flex h-screen bg-gray-50">
-          <ModernSidebar current={view} onChange={setView} profile={profile} onLogout={handleLogout} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <ModernTopbar current={view} onMenu={() => { }} onNotify={() => setNotificationsOpen(!notificationsOpen)} notificationsOpen={notificationsOpen} />
-            <div className="flex-1 overflow-auto">
-              <div className="p-6">
-                <AdminContent view={view} onChange={setView} />
-              </div>
-              {notificationsOpen && (
-                <div className="fixed bottom-6 right-6 w-96 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
-                  <NotificationPanel />
-                </div>
-              )}
+    <AdminDataProvider profile={profile}>
+      <div className="app-shell flex h-screen bg-slate-50">
+        <AppSidebar current={view} onChange={setView} profile={profile} onLogout={handleLogout} mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+        <div className="app-workspace flex min-w-0 flex-1 flex-col overflow-hidden">
+          <ModernTopbar current={view} onMenu={() => setMobileMenuOpen(true)} onNotify={() => setNotificationsOpen(!notificationsOpen)} notificationsOpen={notificationsOpen} />
+          <div className="app-content-scroll flex-1 overflow-auto">
+            <div className="app-content p-4 sm:p-6">
+              <AdminContent view={view} onChange={setView} />
             </div>
+            {notificationsOpen && (
+              <div className="fixed bottom-6 right-6 z-30 w-[min(24rem,calc(100vw-3rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+                <NotificationPanel open={notificationsOpen} onClose={() => setNotificationsOpen(false)} goTo={setView} />
+              </div>
+            )}
           </div>
         </div>
-      </SidebarProvider>
+      </div>
     </AdminDataProvider>
   );
 }

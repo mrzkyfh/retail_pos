@@ -22,6 +22,8 @@ const CollapsibleTrigger = React.forwardRef<
       ref,
       className: cn(render.props.className, className),
       children,
+    // The polymorphic render element can accept the trigger props at runtime.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
   }
 

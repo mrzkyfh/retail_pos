@@ -197,12 +197,78 @@ export function DashboardView({ goTo }: { goTo: (id: ViewId) => void }) {
   if (loadError) return <section className="surface feature-gate" role="alert"><div><strong>Dashboard belum tersedia</strong><span>{loadError}</span></div><button type="button" className="button secondary" onClick={() => setReloadKey((value) => value + 1)}>Coba lagi</button></section>;
   const exportSummary = () => downloadCsv(`ringkasan-${todayKey()}.csv`, [["Cabang", activeBranch?.name ?? ""], ["Periode (hari)", days], ["Penjualan kotor", gross], ["Laba kotor", profit], ["Jumlah transaksi", completed.length], ["Pesanan menunggu", pendingOrders]]);
 
-  return <div className="view-stack">
-    <section className="dashboard-controls"><div className="control-field"><span>Outlet</span><div className="control-value"><Store size={16}/>{activeBranch?.name ?? "Pilih cabang"}</div></div><div className="control-field"><span>Periode laporan</span><div className="control-value"><CalendarDays size={16}/>{days === 1 ? "Hari ini" : `${days} hari terakhir`}</div></div><div className="control-field"><span>Jumlah cabang</span><div className="control-value">{branches.length} cabang</div></div><div className="control-actions"><button className="button secondary" onClick={exportSummary}><Download size={16}/> Ekspor ringkasan</button></div></section>
-    <section className="metric-grid"><article className="metric-card"><p>Penjualan kotor</p><h3>{idr(gross)}</h3><span>{loading ? "Memuat..." : `${completed.length} transaksi selesai`}</span></article><article className="metric-card"><p>Penjualan bersih</p><h3>{idr(gross - discounts)}</h3><span>Setelah diskon</span></article><article className="metric-card"><p>Laba kotor</p><h3>{idr(profit)}</h3><span>Margin {gross ? ((profit / gross) * 100).toFixed(1) : 0}%</span></article><article className="metric-card"><p>Total transaksi</p><h3>{completed.length}</h3><span>Rata-rata {idr(completed.length ? gross / completed.length : 0)}</span></article><article className="metric-card"><p>Retur & pembatalan</p><h3>{idr(cancelledAmount)}</h3><span>{sales.filter((sale) => sale.status !== "completed").length} transaksi</span></article><article className="metric-card"><p>Perlu perhatian</p><h3>{pendingOrders + lowStock}</h3><span>{pendingOrders} pesanan · {lowStock} stok</span></article></section>
-    <section className="dashboard-grid"><article className="surface sales-chart"><div className="surface-heading"><div><h3>Penjualan menurut waktu</h3><p className="heading-note">Data transaksi aktual</p></div><div className="period-tabs">{[[1,"Hari ini"],[7,"7 hari"],[30,"30 hari"]].map(([value,label]) => <button key={value} onClick={() => setDays(Number(value))} className={days === value ? "active" : ""}>{label}</button>)}</div></div><div className="chart-summary"><strong>{idr(gross)}</strong><span>Cabang {activeBranch?.name}</span></div><div className="bar-chart">{chart.map((value, index) => <div className="bar-column" key={index}><div style={{height:`${Math.max((value/maxChart)*92,value?8:1)}%`}} className={value===maxChart&&value>0?"peak":""}/><span>{days===1?String(index+8).padStart(2,"0"):index+1}</span></div>)}</div></article><article className="surface branch-performance"><div className="surface-heading"><div><h3>Penjualan per outlet</h3><p className="heading-note">Periode yang sama</p></div></div><div className="branch-list">{branchTotals.map((row,index)=><div className="branch-row" key={row.name}><span className={`rank ${index===0?"first":""}`}>{index+1}</span><div><strong>{row.name}</strong><small>{row.count} transaksi</small></div><span><strong>{idr(row.total)}</strong></span></div>)}{branchTotals.length===0&&<div className="compact-empty">Belum ada penjualan.</div>}</div><button className="text-action" onClick={()=>goTo("branches")}>Kelola cabang <ChevronRight size={15}/></button></article></section>
-    <section className="dashboard-grid lower"><article className="surface recent-transactions"><div className="surface-heading"><div><h3>Transaksi terbaru</h3><p className="heading-note">Cabang {activeBranch?.name}</p></div><button className="text-action" onClick={()=>goTo("transactions")}>Lihat semua <ChevronRight size={15}/></button></div><div className="compact-table">{sales.slice(0,5).map((sale)=><div className="transaction-row" key={String(sale.id)}><span className="transaction-icon"><FileText size={17}/></span><div><strong>{String(sale.transaction_number)}</strong><small>{dateTime(String(sale.occurred_at))}</small></div><StatusPill tone={sale.status==="completed"?"good":"warn"}>{String(sale.status)}</StatusPill><strong className="amount">{idr(Number(sale.total_amount))}</strong></div>)}{sales.length===0&&<div className="compact-empty">Belum ada transaksi.</div>}</div></article><article className="surface attention-card"><div className="surface-heading"><div><h3>Perlu ditindaklanjuti</h3><p className="heading-note">Data aktual</p></div></div><button className="attention-row" onClick={()=>goTo("orders")}><span className="notice-symbol order"><FileText size={17}/></span><span><strong>{pendingOrders} pesanan menunggu</strong><small>Konfirmasi sebelum stok direservasi</small></span><ChevronRight size={17}/></button><button className="attention-row" onClick={()=>goTo("inventory")}><span className="notice-symbol stock"><Package size={17}/></span><span><strong>{lowStock} produk perlu restok</strong><small>Berdasarkan stok minimum</small></span><ChevronRight size={17}/></button><button className="attention-row" onClick={()=>goTo("team")}><span className="notice-symbol user"><UserCheck size={17}/></span><span><strong>Kelola akses pegawai</strong><small>Peran dan cabang kerja</small></span><ChevronRight size={17}/></button></article></section>
-  </div>;
+  return (
+    <div className="view-stack dashboard-view">
+      <section className="dashboard-controls">
+        <div className="dashboard-context">
+          <span className="context-icon"><Store size={18}/></span>
+          <div><small>Outlet aktif</small><strong>{activeBranch?.name ?? "Pilih cabang"}</strong></div>
+        </div>
+        <div className="dashboard-control-meta">
+          <span><CalendarDays size={16}/>{days === 1 ? "Hari ini" : `${days} hari terakhir`}</span>
+          <span><Store size={16}/>{branches.length} cabang</span>
+        </div>
+        <button className="button secondary" onClick={exportSummary}><Download size={16}/> Ekspor ringkasan</button>
+      </section>
+
+      <section className="metric-grid dashboard-metrics">
+        <article className="metric-card metric-primary">
+          <div className="metric-card-head"><p>Penjualan bersih</p><span className="metric-card-icon"><CircleDollarSign size={19}/></span></div>
+          <h3>{idr(gross - discounts)}</h3>
+          <span>{loading ? "Memuat data terbaru..." : `${completed.length} transaksi selesai`}</span>
+        </article>
+        <article className="metric-card">
+          <div className="metric-card-head"><p>Laba kotor</p><span className="metric-card-icon profit"><WalletCards size={19}/></span></div>
+          <h3>{idr(profit)}</h3>
+          <span>Margin {gross ? ((profit / gross) * 100).toFixed(1) : 0}% dari penjualan</span>
+        </article>
+        <article className="metric-card">
+          <div className="metric-card-head"><p>Total transaksi</p><span className="metric-card-icon transaction"><ShoppingCart size={19}/></span></div>
+          <h3>{completed.length}</h3>
+          <span>Rata-rata {idr(completed.length ? gross / completed.length : 0)}</span>
+        </article>
+        <article className="metric-card">
+          <div className="metric-card-head"><p>Perlu perhatian</p><span className="metric-card-icon attention"><Package size={19}/></span></div>
+          <h3>{pendingOrders + lowStock}</h3>
+          <span>{pendingOrders} pesanan · {lowStock} stok menipis</span>
+        </article>
+      </section>
+
+      <section className="operational-bento">
+        <article className="surface bento-card bento-span-8 sales-chart">
+          <div className="surface-heading">
+            <div className="bento-heading"><span className="bento-heading-icon"><CircleDollarSign size={19}/></span><div><h3>Performa penjualan</h3><p className="heading-note">Pergerakan transaksi pada periode terpilih</p></div></div>
+            <div className="period-tabs">{[[1,"Hari ini"],[7,"7 hari"],[30,"30 hari"]].map(([value,label]) => <button key={value} onClick={() => setDays(Number(value))} className={days === value ? "active" : ""}>{label}</button>)}</div>
+          </div>
+          <div className="bento-preview"><div className="chart-summary"><strong>{idr(gross)}</strong><span>Penjualan kotor · diskon {idr(discounts)}</span></div><div className="bar-chart">{chart.map((value, index) => <div className="bar-column" key={index}><div style={{height:`${Math.max((value/maxChart)*92,value?8:1)}%`}} className={value===maxChart&&value>0?"peak":""}/><span>{days===1?String(index+8).padStart(2,"0"):index+1}</span></div>)}</div></div>
+        </article>
+        <article className="surface bento-card bento-span-4 attention-card">
+          <div className="surface-heading"><div className="bento-heading"><span className="bento-heading-icon"><Package size={19}/></span><div><h3>Perlu ditindaklanjuti</h3><p className="heading-note">Prioritas operasional saat ini</p></div></div></div>
+          <button className="attention-row" onClick={()=>goTo("orders")}><span className="notice-symbol order"><FileText size={17}/></span><span><strong>{pendingOrders} pesanan menunggu</strong><small>Konfirmasi sebelum stok direservasi</small></span><ChevronRight size={17}/></button>
+          <button className="attention-row" onClick={()=>goTo("inventory")}><span className="notice-symbol stock"><Package size={17}/></span><span><strong>{lowStock} produk perlu restok</strong><small>Berdasarkan stok minimum</small></span><ChevronRight size={17}/></button>
+          <button className="attention-row" onClick={()=>goTo("transactions")}><span className="notice-symbol return"><WalletCards size={17}/></span><span><strong>{idr(cancelledAmount)} retur & pembatalan</strong><small>{sales.filter((sale) => sale.status !== "completed").length} transaksi perlu ditinjau</small></span><ChevronRight size={17}/></button>
+          <button className="attention-row" onClick={()=>goTo("team")}><span className="notice-symbol user"><UserCheck size={17}/></span><span><strong>Kelola akses pegawai</strong><small>Peran dan cabang kerja</small></span><ChevronRight size={17}/></button>
+        </article>
+
+        <article className="surface bento-card bento-span-4 branch-performance">
+          <div className="surface-heading"><div className="bento-heading"><span className="bento-heading-icon"><Store size={19}/></span><div><h3>Performa outlet</h3><p className="heading-note">Peringkat pada periode yang sama</p></div></div></div>
+          <div className="branch-list">
+            {branchTotals.map((row,index)=><div className="branch-row" key={row.name}><span className={`rank ${index===0?"first":""}`}>{index+1}</span><div><strong>{row.name}</strong><small>{row.count} transaksi</small></div><span><strong>{idr(row.total)}</strong></span></div>)}
+            {branchTotals.length===0&&<div className="dashboard-empty"><span className="empty-symbol"><Store size={20}/></span><strong>Belum ada penjualan</strong><small>Aktivitas outlet akan tampil di sini.</small></div>}
+          </div>
+          <button className="bento-pill-action" onClick={()=>goTo("branches")}>Kelola cabang <ChevronRight size={15}/></button>
+        </article>
+
+        <article className="surface bento-card bento-span-8 recent-transactions">
+          <div className="surface-heading"><div className="bento-heading"><span className="bento-heading-icon"><FileText size={19}/></span><div><h3>Transaksi terbaru</h3><p className="heading-note">Cabang {activeBranch?.name}</p></div></div><button className="bento-pill-action" onClick={()=>goTo("transactions")}>Lihat semua <ChevronRight size={15}/></button></div>
+          <div className="compact-table">
+            {sales.slice(0,5).map((sale)=><div className="transaction-row" key={String(sale.id)}><span className="transaction-icon"><FileText size={17}/></span><div><strong>{String(sale.transaction_number)}</strong><small>{dateTime(String(sale.occurred_at))}</small></div><StatusPill tone={sale.status==="completed"?"good":"warn"}>{String(sale.status)}</StatusPill><strong className="amount">{idr(Number(sale.total_amount))}</strong></div>)}
+            {sales.length===0&&<div className="dashboard-empty"><span className="empty-symbol"><FileText size={20}/></span><strong>Belum ada transaksi</strong><small>Transaksi baru akan tampil secara otomatis.</small></div>}
+          </div>
+        </article>
+      </section>
+    </div>
+  );
 }
 
 type Product = { id: string; name: string; code: string; description: string | null; category_id: string | null; category: string; base_unit_id: string; base: string; minimum: number; stock: number; cost: number; price: number; resellerPrice: number; active: boolean; units: Array<{ id: string; unit_id: string; unit: string; conversion: number; price: number; resellerPrice: number; default: boolean }> };
